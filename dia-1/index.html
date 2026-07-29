@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Actividad práctica de Vue 3: listar, ver detalle, login con JWT y crear — Módulo 7, Lección 2.">
+<title>Actividad Práctica · Mesa de Ayuda — Axios y JWT</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --surface:#ffffff;
+    --surface-2:#eef1f4;
+    --ink:#181c22;
+    --ink-soft:#59646f;
+    --line:#dfe4e9;
+    --brand:#42b883;
+    --brand-ink:#0d2b1e;
+    --brand-dark:#2b8460;
+    --accent:#2c3e50;
+    --warn:#d98a1f;
+    --warn-bg:#fdf6e8;
+    --danger:#c0392b;
+    --code-bg:#1e2430;
+    --code-ink:#e6edf3;
+    --radius:14px;
+    --shadow:0 1px 3px rgba(16,24,32,.06), 0 8px 24px rgba(16,24,32,.05);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12161b;
+      --surface:#1a2027;
+      --surface-2:#222a33;
+      --ink:#e8edf2;
+      --ink-soft:#9aa7b4;
+      --line:#2b343e;
+      --accent:#8fd8b6;
+      --brand-dark:#5fd39f;
+      --warn:#e8b45c;
+      --warn-bg:#2b2416;
+      --danger:#f08b7f;
+      --shadow:0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:900px;margin:0 auto;padding:0 1.5rem;}
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    background:linear-gradient(140deg,#1f2d3d 0%,#16212c 55%,#123a3f 100%);
+    color:#f2f6f9;padding:3.5rem 0 3rem;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .kicker{
+    display:inline-flex;align-items:center;gap:.5rem;
+    background:rgba(66,184,131,.16);color:#7de3b3;
+    border:1px solid rgba(66,184,131,.35);
+    font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    padding:.35rem .85rem;border-radius:999px;margin-bottom:1.25rem;
+  }
+  header.hero h1{margin:0 0 .75rem;font-size:clamp(1.75rem,4.5vw,2.6rem);line-height:1.15;letter-spacing:-.02em;}
+  header.hero .lead{margin:0;color:#b6c6d3;max-width:62ch;font-size:1.05rem;}
+
+  .hero-facts{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem;}
+  .fact{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    border-radius:10px;padding:.6rem 1rem;font-size:.85rem;color:#cfdbe5;
+  }
+  .fact strong{display:block;color:#fff;font-size:1rem;}
+
+  /* ---------- BLOQUES ---------- */
+  main{padding:3rem 0 6rem;}
+  section.bloque{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:2rem;margin-bottom:1.75rem;
+  }
+  .bloque__head{
+    display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
+    margin:0 0 1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--line);
+  }
+  .num{
+    flex:0 0 auto;width:2.25rem;height:2.25rem;border-radius:8px;
+    background:var(--brand);color:var(--brand-ink);
+    display:grid;place-items:center;font-weight:800;font-size:1rem;
+  }
+  .bloque__head h2{margin:0;font-size:1.3rem;line-height:1.3;flex:1 1 240px;letter-spacing:-.01em;}
+  .tag{
+    font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--brand-dark);background:rgba(66,184,131,.12);
+    border:1px solid rgba(66,184,131,.3);
+    padding:.25rem .6rem;border-radius:999px;white-space:nowrap;
+  }
+
+  h3{margin:1.75rem 0 .5rem;font-size:1rem;color:var(--accent);letter-spacing:.01em;}
+  h3:first-of-type{margin-top:0;}
+
+  p{margin:0 0 1rem;}
+  ul,ol{margin:0 0 1rem;padding-left:1.4rem;}
+  li{margin-bottom:.55rem;}
+  li::marker{color:var(--brand-dark);}
+
+  code{
+    background:var(--surface-2);padding:.12rem .4rem;border-radius:5px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.86em;border:1px solid var(--line);
+  }
+
+
+  /* ---------- CALLOUTS ---------- */
+  .callout{border-left:4px solid var(--brand);background:rgba(66,184,131,.07);padding:1rem 1.25rem;border-radius:0 10px 10px 0;margin:1.25rem 0;}
+  .callout--ojo{border-left-color:var(--warn);background:var(--warn-bg);}
+  .callout--stop{border-left-color:var(--danger);background:rgba(192,57,43,.07);}
+  .callout p:last-child{margin-bottom:0;}
+  .callout strong:first-child{display:inline-block;margin-bottom:.25rem;}
+
+  /* ---------- PISTAS ---------- */
+  details.pista{
+    border:1px dashed var(--line);border-radius:10px;
+    padding:.85rem 1.1rem;margin:1rem 0 0;background:var(--surface-2);
+  }
+  details.pista[open]{border-style:solid;border-color:var(--brand);}
+  details.pista summary{cursor:pointer;font-weight:700;font-size:.9rem;color:var(--brand-dark);list-style:none;user-select:none;}
+  details.pista summary::-webkit-details-marker{display:none;}
+  details.pista summary::before{content:"💡 ";}
+  details.pista summary:hover{text-decoration:underline;}
+  details.pista > *:not(summary){margin-top:.85rem;font-size:.92rem;color:var(--ink-soft);}
+  details.pista ul{margin-bottom:0;}
+
+  /* ---------- TABLA ---------- */
+  .tabla-scroll{overflow-x:auto;margin:1rem 0;-webkit-overflow-scrolling:touch;}
+  table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:520px;}
+  th,td{text-align:left;padding:.7rem .85rem;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:var(--surface-2);font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* ---------- NAV ---------- */
+  nav.indice{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:1.5rem;margin-bottom:2.5rem;box-shadow:var(--shadow);
+  }
+  nav.indice h2{margin:0 0 1rem;font-size:.82rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);}
+  nav.indice ol{margin:0;padding-left:1.3rem;columns:2;column-gap:2rem;}
+  nav.indice li{margin-bottom:.45rem;break-inside:avoid;}
+  nav.indice a{color:var(--accent);text-decoration:none;font-weight:600;font-size:.93rem;}
+  nav.indice a:hover{color:var(--brand-dark);text-decoration:underline;}
+  @media (max-width:600px){nav.indice ol{columns:1;}}
+
+  footer{border-top:1px solid var(--line);padding:2rem 0;text-align:center;color:var(--ink-soft);font-size:.85rem;}
+
+  a{color:var(--brand-dark);}
+  :focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:4px;}
+
+  @media (max-width:640px){
+    section.bloque{padding:1.5rem 1.15rem;}
+    .wrap{padding:0 1rem;}
+    header.hero{padding:2.5rem 0 2rem;}
+  }
+
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker">Módulo 7 · Lección 2 · Actividad práctica</span>
+    <h1>Mesa de Ayuda</h1>
+    <p class="lead">
+      Construye un panel Vue 3 que consuma una API real: listar tickets, ver el detalle de uno,
+      iniciar sesión con JWT y crear un ticket nuevo. Cuatro cosas, bien hechas.
+    </p>
+
+    <div class="hero-facts">
+      <div class="fact"><strong>4 bloques</strong>en orden, a tu ritmo</div>
+      <div class="fact"><strong>Vue 3 + Axios</strong>Composition API</div>
+      <div class="fact"><strong>Individual</strong>o en parejas</div>
+      <div class="fact"><strong>API real</strong>localhost:3001</div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <div class="callout">
+    <strong>Solo cuatro cosas.</strong>
+    <p>
+      Esta actividad es corta a propósito. No se trata de cuántas funciones logres apilar, sino de
+      que estas cuatro queden <strong>sólidas y entendidas</strong>. Si te sobra tiempo, al final hay
+      material opcional — pero primero termina el núcleo.
+    </p>
+  </div>
+
+  <nav class="indice">
+    <h2>Ruta de trabajo</h2>
+    <ol>
+      <li><a href="#contexto">El encargo</a></li>
+      <li><a href="#servidor">El servidor</a></li>
+      <li><a href="#b1">Listar todos los tickets</a></li>
+      <li><a href="#b2">Ver el detalle de uno</a></li>
+      <li><a href="#b3">Iniciar sesión con JWT</a></li>
+      <li><a href="#b4">Crear un ticket</a></li>
+      <li><a href="#extra">Si terminas antes</a></li>
+    </ol>
+  </nav>
+
+<!-- ============ CONTEXTO ============ -->
+<section class="bloque" id="contexto">
+  <div class="bloque__head">
+    <span class="num">📋</span>
+    <h2>El encargo</h2>
+    <span class="tag">Contexto</span>
+  </div>
+
+  <p>
+    El área de soporte de una empresa recibe <strong>tickets</strong> de incidencia. Hoy los
+    administran desde una terminal, escribiendo comandos a mano. Funciona, pero solo lo hace una
+    persona, y cuando esa persona sale de vacaciones el área se detiene.
+  </p>
+
+  <p>
+    Te contratan para construir el <strong>panel web de la mesa de ayuda</strong>. En esta primera
+    entrega necesitan lo mínimo para dejar de usar la terminal:
+  </p>
+
+  <ol>
+    <li>Ver la lista de tickets</li>
+    <li>Abrir uno y leer su detalle</li>
+    <li>Iniciar sesión</li>
+    <li>Crear un ticket nuevo</li>
+  </ol>
+
+  <p>
+    <strong>El servidor ya existe y no lo vas a tocar.</strong> Tu trabajo es del lado del cliente.
+  </p>
+
+  <div class="callout callout--ojo">
+    <strong>Cómo usar esta guía.</strong>
+    <p>
+      Son cuatro bloques. Trabájalos <strong>en orden</strong> y no pases al siguiente hasta que el
+      anterior funcione. Aquí no hay código para copiar, y es a propósito. Cada bloque tiene una
+      <em>pista</em> plegada al final — ábrela solo cuando lleves un rato realmente atascado.
+    </p>
+  </div>
+
+  <div class="callout callout--stop">
+    <strong>Esta API no es igual a la de los ejercicios de clase.</strong>
+    <p>
+      La respuesta del listado tiene otra forma y la validación llega distinta. Si copias el código
+      de clase tal cual, no va a funcionar — y descubrir <em>por qué</em> es parte del ejercicio.
+      Lee siempre la respuesta real antes de asumir nada.
+    </p>
+  </div>
+</section>
+
+<!-- ============ SERVIDOR ============ -->
+<section class="bloque" id="servidor">
+  <div class="bloque__head">
+    <span class="num">🔌</span>
+    <h2>El servidor con el que trabajas</h2>
+    <span class="tag">Infraestructura</span>
+  </div>
+
+  <p>
+    Usarás el backend <code>node-backend-edu</code> en <code>http://localhost:3001</code>.
+    Levántalo antes de empezar y déjalo corriendo en su propia terminal durante toda la actividad.
+    Dentro de esa carpeta: instala las dependencias y ejecuta el script de desarrollo.
+  </p>
+
+  <h3>Las cuatro rutas que vas a usar</h3>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Método</th><th>Ruta</th><th>Qué hace</th><th>¿Token?</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/api/tickets</code></td><td>Lista los tickets</td><td>No</td></tr>
+      <tr><td>GET</td><td><code>/api/tickets/:id</code></td><td>Detalle de un ticket</td><td>No</td></tr>
+      <tr><td>POST</td><td><code>/api/login</code></td><td>Entrega el token y los datos del usuario</td><td>No</td></tr>
+      <tr><td>POST</td><td><code>/api/tickets</code></td><td>Crea un ticket</td><td><strong>Sí</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>El servidor tiene más rutas, pero <strong>no las necesitas hoy</strong>. Ignóralas.</p>
+
+  <h3>Credenciales</h3>
+  <p>Usuario <code>admin</code>, contraseña <code>admin123</code>. El token dura una hora.</p>
+
+  <h3>Forma de un ticket</h3>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code> / <code>codigo</code></td><td>Número / Texto</td><td>Los asigna el servidor</td></tr>
+      <tr><td><code>asunto</code></td><td>Texto</td><td>Obligatorio al crear, mínimo 8 caracteres</td></tr>
+      <tr><td><code>descripcion</code></td><td>Texto</td><td>Obligatorio al crear, mínimo 15 caracteres</td></tr>
+      <tr><td><code>prioridad</code></td><td>Texto</td><td>Solo acepta: <code>baja</code>, <code>media</code> o <code>alta</code></td></tr>
+      <tr><td><code>estado</code></td><td>Texto</td><td>Lo pone el servidor</td></tr>
+      <tr><td><code>solicitante</code></td><td>Texto</td><td>Obligatorio al crear, mínimo 3 caracteres</td></tr>
+      <tr><td><code>creadoEn</code></td><td>Texto</td><td>Fecha ISO puesta por el servidor</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout callout--stop">
+    <strong>Dos servidores, dos terminales.</strong>
+    <p>
+      El backend en el puerto <strong>3001</strong> y tu aplicación Vue en el <strong>5173</strong>.
+      Si cierras la terminal del backend, tu aplicación va a fallar con errores de red y vas a perder
+      veinte minutos buscando el bug en tu código cuando el problema es que el servidor está apagado.
+      Le ha pasado a todos.
+    </p>
+  </div>
+</section>
+
+<!-- ============ BLOQUE 1 ============ -->
+<section class="bloque" id="b1">
+  <div class="bloque__head">
+    <span class="num">1</span>
+    <h2>Listar todos los tickets</h2>
+    <span class="tag">Lectura</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Mostrar los tickets en pantalla al cargar la página.</li>
+    <li>Cada ticket se ve como una tarjeta con su código, asunto, prioridad, estado y solicitante.</li>
+    <li>Un botón para recargar la lista, deshabilitado mientras la carga está en curso.</li>
+    <li>Mostrar cuántos tickets hay en total.</li>
+    <li>La comunicación con la API debe estar en una <strong>capa de servicios</strong> aparte. Ningún componente lleva la dirección del servidor escrita dentro.</li>
+  </ul>
+
+  <h3>Los cuatro estados obligatorios</h3>
+  <ol>
+    <li><strong>Cargando</strong> — mientras esperas la respuesta.</li>
+    <li><strong>Error</strong> — si la petición falla, con un mensaje en lenguaje humano.</li>
+    <li><strong>Vacío</strong> — si no hay tickets que mostrar.</li>
+    <li><strong>Con datos</strong> — la lista renderizada.</li>
+  </ol>
+
+  <div class="callout callout--ojo">
+    <strong>Antes de programar, mira la respuesta.</strong>
+    <p>
+      Pide <code>/api/tickets</code> desde el navegador y observa qué llega.
+      <strong>No es un arreglo pelado.</strong> Es un objeto con dos propiedades: una trae los
+      registros y la otra información adicional. Si lo tratas como arreglo, vas a recibir un error
+      que no dice nada útil y vas a perder diez minutos.
+    </p>
+  </div>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que hayas leído la forma real de la respuesta antes de escribir código.</li>
+    <li>Que la dirección base del servidor esté declarada en un solo lugar del proyecto.</li>
+    <li>Que el indicador de carga se apague <strong>siempre</strong>, salga bien o mal la petición.</li>
+    <li>Que la consola del navegador esté limpia.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — organización y primera petición</summary>
+    <ul>
+      <li>La librería que usamos permite crear una <em>instancia</em> preconfigurada con la dirección base y un tiempo máximo de espera. Créala una vez, expórtala, e impórtala donde la necesites. Si mañana cambia el dominio del servidor, tocas una línea.</li>
+      <li>Separa en dos archivos: uno que configura <em>cómo</em> se habla con el servidor y otro que declara <em>qué</em> se le pide.</li>
+      <li>La respuesta de esta librería es un objeto con varias propiedades. Los datos vienen dentro de una de ellas. Y ojo: <em>dentro</em> de esos datos hay otra capa más, según lo que devuelve este servidor.</li>
+      <li>Hay una tercera cláusula que acompaña al bloque de intento y captura, y que se ejecuta pase lo que pase. Ese es el lugar correcto para apagar el indicador de carga.</li>
+      <li>La carga inicial va en el gancho del ciclo de vida que se dispara cuando el componente ya está en el DOM.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 2 ============ -->
+<section class="bloque" id="b2">
+  <div class="bloque__head">
+    <span class="num">2</span>
+    <h2>Ver el detalle de un ticket</h2>
+    <span class="tag">Lectura</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Al hacer clic en una tarjeta, mostrar el detalle completo de ese ticket, pedido al servidor por su identificador.</li>
+    <li>El detalle incluye la descripción completa y la fecha de creación, que en la lista no se muestran.</li>
+    <li>Mientras se carga el detalle, un indicador de carga propio. La lista no debe desaparecer.</li>
+    <li>Una forma clara de volver o cerrar el detalle.</li>
+    <li>Si se pide un ticket que no existe, mostrar un mensaje comprensible sin romper la vista.</li>
+  </ul>
+
+  <h3>La prueba de este bloque</h3>
+  <p>
+    Pide a mano el detalle de un ticket con un identificador inventado, por ejemplo el 999.
+    Tu aplicación tiene que responder con dignidad: nada de pantalla en blanco ni de errores crudos.
+  </p>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que el detalle se pida al servidor y no se arme buscando dentro de la lista que ya tenías. Piensa por qué: la lista podría estar desactualizada, y además no trae todos los campos.</li>
+    <li>Que el estado de carga del detalle sea <strong>independiente</strong> del de la lista.</li>
+    <li>Que el caso "no existe" esté resuelto y puedas demostrarlo.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — detalle y errores</summary>
+    <ul>
+      <li>La ruta del detalle lleva el identificador dentro de la propia dirección. Constrúyela con una plantilla de texto, no concatenando a mano.</li>
+      <li>A diferencia del listado, esta respuesta <strong>sí</strong> viene directa: un solo ticket, sin capas adicionales. Compruébalo antes de asumir.</li>
+      <li>Cuando el recurso no existe, el servidor responde con un código específico y un mensaje propio en el cuerpo. Muestra <strong>ese</strong> mensaje: es más preciso que cualquier texto genérico tuyo.</li>
+      <li>Necesitas variables reactivas separadas para el detalle: una para el ticket seleccionado, otra para su carga y otra para su error. Reutilizar las de la lista te va a dar comportamientos raros.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 3 ============ -->
+<section class="bloque" id="b3">
+  <div class="bloque__head">
+    <span class="num">3</span>
+    <h2>Iniciar sesión con JWT</h2>
+    <span class="tag">Sesión</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un formulario con usuario y contraseña que envíe las credenciales al servidor y reciba el token.</li>
+    <li>El botón de envío deshabilitado mientras la petición está en curso y mientras el formulario esté incompleto.</li>
+    <li>Si las credenciales son incorrectas, un mensaje claro. El formulario no se rompe ni se vacía.</li>
+    <li>Con sesión activa, mostrar en pantalla <strong>el nombre de la persona y su rol</strong>.</li>
+    <li>La sesión debe <strong>sobrevivir a un refresco de página</strong>.</li>
+    <li>Un botón de cerrar sesión que limpie todo y devuelva la interfaz al estado inicial.</li>
+    <li>La contraseña no debe quedar guardada en ningún lado después del acceso.</li>
+  </ul>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que puedas explicar las <strong>tres partes</strong> de un token, qué hay en cada una y cuál es la que realmente protege.</li>
+    <li>Que justifiques dónde decidiste guardar el token y cuál es el riesgo de esa decisión.</li>
+    <li>Que el nombre y el rol que muestras salgan de una fuente que puedas explicar.</li>
+  </ul>
+
+  <div class="callout callout--stop">
+    <strong>Lo más importante que vas a aprender hoy sobre tokens.</strong>
+    <p>
+      El contenido de un token <strong>se puede leer</strong>. No está encriptado: solo codificado.
+      Cualquiera que lo tenga puede ver qué hay dentro, sin ninguna clave. Averigua por qué eso no es
+      una falla de diseño, qué es lo que sí lo protege, y qué consecuencia tiene para lo que un
+      servidor puede o no puede guardar ahí dentro.
+    </p>
+  </div>
+
+  <details class="pista">
+    <summary>Pista — token y sesión</summary>
+    <ul>
+      <li>Mira la respuesta completa del acceso: además del token trae los datos del usuario ya listos. Eso te ahorra trabajo, aunque también puedes sacarlos del propio token. Ambas vías son válidas: elige una y ten lista tu justificación.</li>
+      <li>El token está formado por tres partes separadas por puntos. La del medio contiene los datos y viene codificada en una variante de Base64 que reemplaza dos caracteres. Si decides decodificarla, tendrás que revertir ese reemplazo primero, o vas a obtener basura de forma intermitente.</li>
+      <li>Copia tu token y pégalo en <a href="https://jwt.io" target="_blank" rel="noopener">jwt.io</a> para ver qué contiene. Eso solo te responde la mitad de las preguntas de este bloque.</li>
+      <li>Para que la sesión sobreviva al refresco necesitas guardarla en el navegador. Investiga qué opciones existen y cuál es el riesgo de cada una — porque te lo van a preguntar.</li>
+      <li>Al recargar la página, tu aplicación debe recuperar la sesión guardada al arrancar. Si no lo haces, el token está ahí pero tu interfaz no se entera.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 4 ============ -->
+<section class="bloque" id="b4">
+  <div class="bloque__head">
+    <span class="num">4</span>
+    <h2>Crear un ticket</h2>
+    <span class="tag">Escritura</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un formulario para crear un ticket con asunto, descripción, prioridad y solicitante.</li>
+    <li>La prioridad se elige de una lista con los tres valores permitidos, no se escribe libremente.</li>
+    <li>El formulario solo está disponible <strong>con sesión activa</strong>. Sin sesión, la lectura sigue funcionando.</li>
+    <li>Al crear, la credencial de sesión debe viajar en la petición. Sin ella, el servidor rechaza.</li>
+    <li>Si el servidor rechaza por validación, mostrar el error <strong>debajo de cada campo</strong> que lo tiene.</li>
+    <li>Si todo sale bien: mensaje de confirmación, el formulario se limpia, y el ticket nuevo aparece en la lista <strong>sin recargar la página</strong>.</li>
+  </ul>
+
+  <div class="callout callout--ojo">
+    <strong>El detalle que separa una app amateur de una profesional.</strong>
+    <p>
+      Cuando la validación falla, esta API no manda un texto suelto: manda <strong>un mapa de campo a
+      mensaje</strong>. Eso te permite pintar cada error justo bajo el campo que lo causó, en vez de un
+      cartel rojo genérico arriba del formulario. Provócalo a propósito: envía un asunto de tres letras
+      y una prioridad inventada, y mira qué llega.
+    </p>
+  </div>
+
+  <h3>La prueba de este bloque</h3>
+  <ol>
+    <li>Sin haber iniciado sesión, intenta crear un ticket. Observa qué responde el servidor.</li>
+    <li>Inicia sesión y repite. Ahora debe funcionar.</li>
+    <li>Envía datos inválidos a propósito y comprueba que cada campo muestra su propio error.</li>
+  </ol>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que la credencial viaje correctamente y puedas demostrarlo en la pestaña de red del navegador.</li>
+    <li>Que los errores de validación se muestren por campo y no todos juntos.</li>
+    <li>Que la lista se actualice usando la respuesta del servidor, no con una recarga completa.</li>
+    <li>Que no se pueda enviar el formulario dos veces seguidas por hacer doble clic.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — enviar con credencial y manejar la validación</summary>
+    <ul>
+      <li>La credencial viaja en una cabecera de la petición con un formato específico: una palabra clave, un espacio y el token. Si la escribes mal, el servidor te rechaza con un mensaje que no siempre explica por qué. Búscala en la documentación del backend.</li>
+      <li>Puedes pasar cabeceras propias en las opciones de cada petición. Más adelante aprenderás a automatizarlo, pero por hoy hacerlo a mano está bien — y te obliga a entender qué se envía.</li>
+      <li>Cuando la validación falla, el cuerpo de la respuesta trae un objeto donde cada clave es el nombre de un campo. Si tus variables del formulario usan esos mismos nombres, mostrar el error debajo de cada uno se vuelve trivial.</li>
+      <li>Acuérdate de limpiar los errores anteriores antes de cada envío. Si no, el usuario ve errores viejos de campos que ya corrigió.</li>
+      <li>Para evitar el doble envío, deshabilita el botón mientras la petición está en curso. Es la misma técnica del indicador de carga.</li>
+      <li>Cuando el servidor confirma la creación, te devuelve el ticket completo con su código e identificador. Agrégalo a tu lista en memoria en vez de volver a pedir todo.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ EXTRA ============ -->
+<section class="bloque" id="extra">
+  <div class="bloque__head">
+    <span class="num">🚀</span>
+    <h2>Si terminas antes</h2>
+    <span class="tag">Opcional</span>
+  </div>
+
+  <p>
+    Solo si los cuatro bloques están terminados y funcionando. No empieces por acá:
+    entregar cuatro cosas sólidas vale más que ocho a medias.
+  </p>
+
+  <h3>Nivel 1 — pulir lo que ya tienes</h3>
+  <ol>
+    <li><strong>Buscador</strong> por asunto o solicitante sobre la lista.</li>
+    <li><strong>Distintivo visual por prioridad:</strong> que un ticket de prioridad alta se note. Y que se note <em>sin depender solo del color</em>, para quien no distingue colores.</li>
+    <li><strong>Antigüedad:</strong> mostrar "hace 3 días" calculado desde la fecha de creación.</li>
+    <li><strong>Validación previa:</strong> revisar los largos mínimos en el navegador antes de gastar una petición. Pero ojo: eso <strong>no reemplaza</strong> la validación del servidor. ¿Sabes por qué?</li>
+    <li><strong>Notificación temporal</strong> que confirme la creación y desaparezca sola.</li>
+  </ol>
+
+  <h3>Nivel 2 — conceptos nuevos</h3>
+  <ol>
+    <li><strong>Interceptores:</strong> que la credencial se adjunte sola a cada petición protegida, en vez de escribirla en cada llamada. Investiga cómo se registran sobre la instancia que ya creaste.</li>
+    <li><strong>Cuenta regresiva de la sesión:</strong> muestra cuánto le queda al token. El campo de expiración viene en <strong>segundos</strong> y la función de JavaScript que da la hora actual devuelve <strong>milisegundos</strong>. Ese detalle es el error clásico de esta lección.</li>
+    <li><strong>Composables:</strong> extrae la lógica de sesión a una función reutilizable fuera de los componentes.</li>
+    <li><strong>Paginación:</strong> la propiedad que ignoraste en el bloque 1 trae la información para paginar. Úsala.</li>
+  </ol>
+
+  <div class="callout">
+    <strong>Y el cierre, que no es sobre código.</strong>
+    <p>
+      Cuatro operaciones bien hechas enseñan más que veinte a medias. Si terminas esto entendiendo
+      qué viaja en cada petición, por qué el servidor responde lo que responde y dónde queda guardado
+      tu token, ya cumpliste el objetivo de la clase.
+    </p>
+    <p>
+      Los conceptos primero. El código después.
+    </p>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Módulo 7 · Lección 2 — Consumo de datos desde una API · Actividad práctica
+  </div>
+</footer>
+
+</body>
+</html>
