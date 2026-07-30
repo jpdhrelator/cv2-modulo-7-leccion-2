@@ -1,0 +1,96 @@
+:root{
+  --bg:#f4f6f8;      --surface:#fff;    --ink:#1b1f24;   --ink-soft:#5a6673;
+  --line:#dfe4e9;    --brand:#2f8f66;   --brand-2:#42b883;
+  --alta:#c0392b;    --media:#e8a33d;   --baja:#5a8dc0;
+  --ok:#2f8f66;      --warn:#e8a33d;    --error:#c0392b;  --info:#34618e;
+  --radius:10px;     --sp:8px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--ink); line-height:1.6;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+.contenedor{max-width:1080px;margin:0 auto;padding:calc(var(--sp)*3) calc(var(--sp)*2);}
+
+/* ---------- Barra de sesión ---------- */
+.barra{
+  background:#22313f;color:#fff;padding:calc(var(--sp)*1.5) calc(var(--sp)*2);
+  display:flex;flex-wrap:wrap;gap:var(--sp);align-items:center;justify-content:space-between;
+}
+.barra h1{font-size:1.1rem;margin:0;}
+.barra .sesion{display:flex;align-items:center;gap:calc(var(--sp)*1.5);font-size:.88rem;}
+.reloj{font-family:ui-monospace,Menlo,monospace;font-weight:700;padding:2px 10px;border-radius:999px;background:#2f8f66;}
+.reloj.alerta{background:var(--warn);color:#3a2a06;}
+.reloj.critico{background:var(--error);animation:latido 1s infinite;}
+@keyframes latido{50%{opacity:.45;}}
+
+/* ---------- Tarjetas y formularios ---------- */
+.tarjeta{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:calc(var(--sp)*3);margin-bottom:calc(var(--sp)*3);}
+.tarjeta h2{margin:0 0 var(--sp);font-size:1.15rem;}
+.rejilla{display:grid;gap:calc(var(--sp)*2);grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
+label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:4px;}
+input,select,textarea{
+  width:100%;padding:calc(var(--sp)*1.25);border:1px solid var(--line);
+  border-radius:6px;font:inherit;font-size:.92rem;background:#fff;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand-2);outline-offset:1px;border-color:var(--brand-2);}
+input.invalido,textarea.invalido{border-color:var(--error);background:#fff7f6;}
+.error-campo{color:var(--error);font-size:.78rem;margin-top:4px;display:block;}
+
+/* ---------- Botones (área táctil mínima 44px) ---------- */
+button{
+  font:inherit;font-weight:600;border:0;border-radius:6px;cursor:pointer;
+  padding:calc(var(--sp)*1.25) calc(var(--sp)*2);min-height:44px;background:var(--brand);color:#fff;
+}
+button:hover:not(:disabled){filter:brightness(1.08);}
+button:disabled{opacity:.5;cursor:not-allowed;}
+button.secundario{background:#e8edf1;color:var(--ink);}
+button.peligro{background:var(--error);}
+button.fantasma{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+button.chico{min-height:34px;padding:4px 10px;font-size:.8rem;}
+
+/* ---------- Tabla de tickets ---------- */
+.tabla-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:760px;}
+th,td{text-align:left;padding:calc(var(--sp)*1.25);border-bottom:1px solid var(--line);vertical-align:middle;}
+th{background:#eef1f4;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);}
+tbody tr:hover{background:#f8fafb;}
+
+.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;}
+.pill.alta{background:#fdecea;color:var(--alta);}
+.pill.media{background:#fdf6e8;color:#a06b12;}
+.pill.baja{background:#eaf1f8;color:var(--baja);}
+.pill.abierto{background:#eaf1f8;color:var(--info);}
+.pill.en_proceso{background:#fdf6e8;color:#a06b12;}
+.pill.cerrado{background:#edf2ef;color:var(--ink-soft);}
+
+/* ---------- Estados de la interfaz ---------- */
+.aviso{padding:calc(var(--sp)*1.5) calc(var(--sp)*2);border-radius:6px;margin-bottom:calc(var(--sp)*2);font-size:.9rem;border-left:4px solid;}
+.aviso.exito{background:#eef8f3;border-color:var(--ok);color:#1d5c43;}
+.aviso.error{background:#fdecea;border-color:var(--error);color:#8c2318;}
+.aviso.alerta{background:#fdf6e8;border-color:var(--warn);color:#7a5410;}
+.aviso.info{background:#eef4fa;border-color:var(--info);color:#254a6d;}
+
+.vacio{text-align:center;padding:calc(var(--sp)*6) var(--sp);color:var(--ink-soft);}
+.vacio .icono{font-size:2.5rem;display:block;margin-bottom:var(--sp);}
+
+/* Skeleton loader: mejor que un spinner porque anticipa la forma del contenido */
+.esqueleto{height:16px;border-radius:4px;background:linear-gradient(90deg,#e9edf1 25%,#f4f7f9 50%,#e9edf1 75%);background-size:200% 100%;animation:brillo 1.2s infinite;}
+@keyframes brillo{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* ---------- Zona segura (cifrado) ---------- */
+.segura{border:2px dashed var(--brand);background:#f7fdfa;border-radius:var(--radius);padding:calc(var(--sp)*2.5);}
+.segura h3{margin-top:0;color:var(--brand);font-size:1rem;}
+.cifrado{
+  font-family:ui-monospace,Menlo,monospace;font-size:.74rem;word-break:break-all;
+  background:#1e2430;color:#8ee0b5;padding:calc(var(--sp)*1.5);border-radius:6px;
+}
+.claro{font-family:ui-monospace,Menlo,monospace;font-size:.95rem;background:#fdf6e8;color:#7a5410;padding:calc(var(--sp)*1.5);border-radius:6px;border:1px solid var(--warn);}
+
+.acciones{display:flex;flex-wrap:wrap;gap:var(--sp);margin-top:calc(var(--sp)*2);}
+.paginacion{display:flex;align-items:center;justify-content:space-between;gap:var(--sp);margin-top:calc(var(--sp)*2);font-size:.85rem;color:var(--ink-soft);}
+
+@media (max-width:640px){
+  .barra{flex-direction:column;align-items:flex-start;}
+  .contenedor{padding:calc(var(--sp)*2) var(--sp);}
+}

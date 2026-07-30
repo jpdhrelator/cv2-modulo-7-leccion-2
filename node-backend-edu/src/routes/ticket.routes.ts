@@ -8,6 +8,7 @@ import {
 import {
     PRIORIDADES, ESTADOS, type Ticket, type Prioridad, type EstadoTicket
 } from '../models/ticket.model.js';
+import { validarPaqueteCifrado } from '../utils/paquete.util.js';
 
 const router = Router();
 
@@ -219,6 +220,63 @@ router.post('/', authenticateJWT, (req: AuthRequest, res: Response) => {
 });
 
 /* ------------------------------------------------------------------ */
+/* PUT /api/tickets/:id — PROTEGIDO. REEMPLAZO TOTAL.                  */
+/*                                                                     */
+/* Ésta es la diferencia con PATCH y hay que verla en vivo:            */
+/* PUT no "actualiza", REEMPLAZA. Lo que no mandes en el cuerpo NO se  */
+/* conserva: vuelve a su valor por defecto. Por eso exige TODOS los    */
+/* campos obligatorios y por eso `solucion` y `datoSeguro` se pierden  */
+/* si el cliente no los reenvía.                                       */
+/*                                                                     */
+/* Lo único que sobrevive es lo que NO es editable: id, codigo y       */
+/* creadoEn. Eso es identidad del recurso, no contenido.               */
+/* ------------------------------------------------------------------ */
+router.put('/:id', authenticateJWT, (req: AuthRequest, res: Response) => {
+    const ticket = buscarTicket(req.params.id);
+    if (!ticket) {
+        return res.status(404).json({ message: `No existe el ticket con id ${req.params.id}.` });
+    }
+
+    if (ticket.estado === 'cerrado') {
+        return res.status(409).json({
+            message: 'No se puede reemplazar un ticket cerrado. Reábrelo primero.',
+            estadoActual: ticket.estado
+        });
+    }
+
+    // `parcial = false`: acá SÍ exigimos el cuerpo completo.
+    const errores = validarTicket(req.body, false);
+    if (Object.keys(errores).length > 0) {
+        return res.status(422).json({
+            message: 'PUT reemplaza el recurso completo: faltan campos obligatorios.',
+            errores
+        });
+    }
+
+    const perdidos: string[] = [];
+    if (ticket.solucion && req.body.solucion === undefined) perdidos.push('solucion');
+    if (ticket.datoSeguro && req.body.datoSeguro === undefined) perdidos.push('datoSeguro');
+
+    ticket.asunto = String(req.body.asunto).trim();
+    ticket.descripcion = String(req.body.descripcion).trim();
+    ticket.prioridad = req.body.prioridad;
+    ticket.solicitante = String(req.body.solicitante).trim();
+    ticket.estado = req.body.estado ?? 'abierto';
+    ticket.solucion = typeof req.body.solucion === 'string' ? req.body.solucion.trim() : null;
+    ticket.datoSeguro = null; // el dato cifrado se maneja por su propia ruta, nunca por PUT
+    ticket.actualizadoEn = marcaDeTiempo();
+
+    res.json({
+        ticket,
+        // Aviso educativo: el servidor te dice explícitamente qué borró el PUT.
+        // Una API real no haría esto; acá existe para que la lección se vea.
+        aviso: perdidos.length
+            ? `PUT reemplazó el recurso completo. Se perdieron estos campos porque no los enviaste: ${perdidos.join(', ')}.`
+            : 'PUT reemplazó el recurso completo.'
+    });
+});
+
+/* ------------------------------------------------------------------ */
 /* PATCH /api/tickets/:id — PROTEGIDO. Actualización parcial.          */
 /* ------------------------------------------------------------------ */
 router.patch('/:id', authenticateJWT, (req: AuthRequest, res: Response) => {
@@ -304,6 +362,75 @@ router.post('/:id/reabrir', authenticateJWT, (req: AuthRequest, res: Response) =
     ticket.actualizadoEn = marcaDeTiempo();
 
     res.json({ message: `Ticket ${ticket.codigo} reabierto.`, ticket });
+});
+
+/* ------------------------------------------------------------------ */
+/* PUT /api/tickets/:id/seguro — PROTEGIDO                             */
+/*                                                                     */
+/* Guarda (o rota) el dato sensible del solicitante YA CIFRADO por el  */
+/* navegador. Es PUT y no PATCH porque un paquete cifrado se reemplaza */
+/* entero: no existe "actualizar la mitad de un texto cifrado".        */
+/*                                                                     */
+/* El servidor valida la FORMA (Base64, tres campos) y NUNCA el        */
+/* contenido. No conoce la frase de paso y no puede descifrar nada.    */
+/* Esto se llama almacenamiento de conocimiento cero.                  */
+/* ------------------------------------------------------------------ */
+router.put('/:id/seguro', authenticateJWT, (req: AuthRequest, res: Response) => {
+    const ticket = buscarTicket(req.params.id);
+    if (!ticket) {
+        return res.status(404).json({ message: `No existe el ticket con id ${req.params.id}.` });
+    }
+
+    const errores = validarPaqueteCifrado(req.body?.paquete);
+
+    const etiqueta = req.body?.etiqueta;
+    if (typeof etiqueta !== 'string' || etiqueta.trim().length < 3) {
+        errores.etiqueta = 'La etiqueta es obligatoria (mínimo 3 caracteres) y viaja en claro.';
+    }
+
+    if (Object.keys(errores).length > 0) {
+        return res.status(422).json({
+            message: 'El paquete cifrado no tiene el formato esperado.',
+            errores
+        });
+    }
+
+    ticket.datoSeguro = {
+        etiqueta: etiqueta.trim(),
+        paquete: {
+            salt: req.body.paquete.salt,
+            iv: req.body.paquete.iv,
+            dato: req.body.paquete.dato
+        },
+        actualizadoEn: marcaDeTiempo()
+    };
+    ticket.actualizadoEn = ticket.datoSeguro.actualizadoEn;
+
+    res.json({
+        message: `Dato sensible guardado cifrado en el ticket ${ticket.codigo}.`,
+        ticket
+    });
+});
+
+/* ------------------------------------------------------------------ */
+/* DELETE /api/tickets/:id/seguro — PROTEGIDO                          */
+/*                                                                     */
+/* Olvidar el dato sensible sin tocar el resto del ticket.             */
+/* ------------------------------------------------------------------ */
+router.delete('/:id/seguro', authenticateJWT, (req: AuthRequest, res: Response) => {
+    const ticket = buscarTicket(req.params.id);
+    if (!ticket) {
+        return res.status(404).json({ message: `No existe el ticket con id ${req.params.id}.` });
+    }
+
+    if (!ticket.datoSeguro) {
+        return res.status(404).json({ message: 'Este ticket no tiene ningún dato sensible guardado.' });
+    }
+
+    ticket.datoSeguro = null;
+    ticket.actualizadoEn = marcaDeTiempo();
+
+    res.json({ message: `Dato sensible eliminado del ticket ${ticket.codigo}.`, ticket });
 });
 
 /* ------------------------------------------------------------------ */

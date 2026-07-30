@@ -2,6 +2,7 @@ import { Router, type Response } from 'express';
 import { authenticateJWT, type AuthRequest } from '../middleware/auth.middleware.js';
 import { notas, nuevoIdNota, marcaDeTiempo } from '../data/store.js';
 import { type NotaCifrada } from '../models/ticket.model.js';
+import { validarPaqueteCifrado } from '../utils/paquete.util.js';
 
 const router = Router();
 
@@ -15,34 +16,13 @@ const router = Router();
  * Por eso el servidor SÓLO valida la FORMA del paquete, nunca su contenido.
  */
 
-const ES_BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
-
 function validarPaquete(cuerpo: any): Record<string, string> {
-    const errores: Record<string, string> = {};
+    // La validación de forma del paquete vive en un solo lugar y se comparte
+    // con los tickets: ver src/utils/paquete.util.ts
+    const errores = validarPaqueteCifrado(cuerpo?.paquete);
 
     if (typeof cuerpo?.titulo !== 'string' || cuerpo.titulo.trim().length < 3) {
         errores.titulo = 'El título es obligatorio (mínimo 3 caracteres).';
-    }
-
-    const paquete = cuerpo?.paquete;
-
-    if (!paquete || typeof paquete !== 'object') {
-        errores.paquete = 'Falta el paquete cifrado. Debe ser un objeto con salt, iv y dato.';
-        return errores;
-    }
-
-    (['salt', 'iv', 'dato'] as const).forEach(campo => {
-        const valor = paquete[campo];
-        if (typeof valor !== 'string' || valor.length === 0) {
-            errores[`paquete.${campo}`] = `El campo "${campo}" es obligatorio.`;
-        } else if (!ES_BASE64.test(valor)) {
-            errores[`paquete.${campo}`] = `El campo "${campo}" debe venir codificado en Base64.`;
-        }
-    });
-
-    // Señal de que el cliente mandó texto plano por error.
-    if (typeof paquete.dato === 'string' && paquete.dato.length < 12) {
-        errores['paquete.dato'] = 'El dato cifrado es sospechosamente corto. ¿Estás enviando el texto sin cifrar?';
     }
 
     return errores;

@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.routes.js';
 import itemRoutes from './routes/item.routes.js';
 import ticketRoutes from './routes/ticket.routes.js';
 import notaRoutes from './routes/nota.routes.js';
+import personaRoutes from './routes/persona.routes.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -17,7 +18,7 @@ const PORT = 3001;
 // cabeceras aunque el servidor sí las envíe. Por defecto sólo son legibles
 // unas pocas cabeceras estándar.
 app.use(cors({
-    exposedHeaders: ['Retry-After', 'X-Total-Registros']
+    exposedHeaders: ['Retry-After', 'X-Total-Registros', 'Location']
 }));
 app.use(express.json());
 
@@ -34,10 +35,22 @@ app.get('/', (req: Request, res: Response) => {
                 'GET /api/tickets/resumen',
                 'GET /api/tickets/:id',
                 'POST /api/tickets',
+                'PUT /api/tickets/:id',
                 'PATCH /api/tickets/:id',
                 'POST /api/tickets/:id/cerrar',
                 'POST /api/tickets/:id/reabrir',
+                'PUT /api/tickets/:id/seguro',
+                'DELETE /api/tickets/:id/seguro',
                 'DELETE /api/tickets/:id'
+            ],
+            personas: [
+                'GET /api/personas',
+                'GET /api/personas/departamentos',
+                'GET /api/personas/:id',
+                'POST /api/personas',
+                'PUT /api/personas/:id',
+                'PATCH /api/personas/:id',
+                'DELETE /api/personas/:id'
             ],
             notas: ['GET /api/notas', 'POST /api/notas', 'DELETE /api/notas/:id'],
             items: ['GET /api/items', 'POST /api/items', 'PUT /api/items/:id', 'PATCH /api/items/:id', 'DELETE /api/items/:id']
@@ -49,6 +62,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/api', authRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/personas', personaRoutes);
 app.use('/api/notas', notaRoutes);
 
 // Manejo de errores 404
