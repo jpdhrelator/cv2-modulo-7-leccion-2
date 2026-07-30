@@ -1,7 +1,6 @@
 # Configurar Firebase + Cloud Firestore para un proyecto JavaScript
 
-> **Módulo 7 — Lección 2** · Guía previa a [en-vivo-2-cifrado-y-firestore.html](en-vivo-2-cifrado-y-firestore.html)
-
+> **Módulo 7 — Lección 2** 
 ---
 
 ## Antes de tocar una sola línea de código
