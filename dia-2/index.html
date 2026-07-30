@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Actividad práctica de Vue 3: CRUD completo sobre el recurso Personas — GET, POST, PUT, PATCH y DELETE con JWT. Módulo 7, Lección 2.">
+<title>Actividad Práctica · Registro de Personal — CRUD completo</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --surface:#ffffff;
+    --surface-2:#eef1f4;
+    --ink:#181c22;
+    --ink-soft:#59646f;
+    --line:#dfe4e9;
+    --brand:#42b883;
+    --brand-ink:#0d2b1e;
+    --brand-dark:#2b8460;
+    --accent:#2c3e50;
+    --warn:#d98a1f;
+    --warn-bg:#fdf6e8;
+    --danger:#c0392b;
+    --code-bg:#1e2430;
+    --code-ink:#e6edf3;
+    --radius:14px;
+    --shadow:0 1px 3px rgba(16,24,32,.06), 0 8px 24px rgba(16,24,32,.05);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12161b;
+      --surface:#1a2027;
+      --surface-2:#222a33;
+      --ink:#e8edf2;
+      --ink-soft:#9aa7b4;
+      --line:#2b343e;
+      --accent:#8fd8b6;
+      --brand-dark:#5fd39f;
+      --warn:#e8b45c;
+      --warn-bg:#2b2416;
+      --danger:#f08b7f;
+      --shadow:0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:900px;margin:0 auto;padding:0 1.5rem;}
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    background:linear-gradient(140deg,#1f2d3d 0%,#16212c 55%,#123a3f 100%);
+    color:#f2f6f9;padding:3.5rem 0 3rem;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .kicker{
+    display:inline-flex;align-items:center;gap:.5rem;
+    background:rgba(66,184,131,.16);color:#7de3b3;
+    border:1px solid rgba(66,184,131,.35);
+    font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    padding:.35rem .85rem;border-radius:999px;margin-bottom:1.25rem;
+  }
+  header.hero h1{margin:0 0 .75rem;font-size:clamp(1.75rem,4.5vw,2.6rem);line-height:1.15;letter-spacing:-.02em;}
+  header.hero .lead{margin:0;color:#b6c6d3;max-width:62ch;font-size:1.05rem;}
+
+  .hero-facts{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem;}
+  .fact{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    border-radius:10px;padding:.6rem 1rem;font-size:.85rem;color:#cfdbe5;
+  }
+  .fact strong{display:block;color:#fff;font-size:1rem;}
+
+  /* ---------- BLOQUES ---------- */
+  main{padding:3rem 0 6rem;}
+  section.bloque{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:2rem;margin-bottom:1.75rem;
+  }
+  .bloque__head{
+    display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
+    margin:0 0 1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--line);
+  }
+  .num{
+    flex:0 0 auto;width:2.25rem;height:2.25rem;border-radius:8px;
+    background:var(--brand);color:var(--brand-ink);
+    display:grid;place-items:center;font-weight:800;font-size:1rem;
+  }
+  .bloque__head h2{margin:0;font-size:1.3rem;line-height:1.3;flex:1 1 240px;letter-spacing:-.01em;}
+  .tag{
+    font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--brand-dark);background:rgba(66,184,131,.12);
+    border:1px solid rgba(66,184,131,.3);
+    padding:.25rem .6rem;border-radius:999px;white-space:nowrap;
+  }
+
+  h3{margin:1.75rem 0 .5rem;font-size:1rem;color:var(--accent);letter-spacing:.01em;}
+  h3:first-of-type{margin-top:0;}
+
+  p{margin:0 0 1rem;}
+  ul,ol{margin:0 0 1rem;padding-left:1.4rem;}
+  li{margin-bottom:.55rem;}
+  li::marker{color:var(--brand-dark);}
+
+  code{
+    background:var(--surface-2);padding:.12rem .4rem;border-radius:5px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.86em;border:1px solid var(--line);
+  }
+
+  /* ---------- VERBOS HTTP ---------- */
+  .verbo{
+    display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:.72rem;font-weight:700;letter-spacing:.05em;
+    padding:.15rem .5rem;border-radius:5px;border:1px solid transparent;
+  }
+  .verbo.get{background:rgba(52,97,142,.14);color:#34618e;border-color:rgba(52,97,142,.35);}
+  .verbo.post{background:rgba(66,184,131,.14);color:var(--brand-dark);border-color:rgba(66,184,131,.35);}
+  .verbo.put{background:rgba(125,75,181,.14);color:#7d4bb5;border-color:rgba(125,75,181,.35);}
+  .verbo.patch{background:rgba(217,138,31,.14);color:var(--warn);border-color:rgba(217,138,31,.35);}
+  .verbo.delete{background:rgba(192,57,43,.14);color:var(--danger);border-color:rgba(192,57,43,.35);}
+  @media (prefers-color-scheme: dark){
+    .verbo.get{color:#8ab4dd;} .verbo.put{color:#c4a0e8;}
+  }
+
+  /* ---------- CALLOUTS ---------- */
+  .callout{border-left:4px solid var(--brand);background:rgba(66,184,131,.07);padding:1rem 1.25rem;border-radius:0 10px 10px 0;margin:1.25rem 0;}
+  .callout--ojo{border-left-color:var(--warn);background:var(--warn-bg);}
+  .callout--stop{border-left-color:var(--danger);background:rgba(192,57,43,.07);}
+  .callout p:last-child{margin-bottom:0;}
+  .callout strong:first-child{display:inline-block;margin-bottom:.25rem;}
+
+  /* ---------- PISTAS ---------- */
+  details.pista{
+    border:1px dashed var(--line);border-radius:10px;
+    padding:.85rem 1.1rem;margin:1rem 0 0;background:var(--surface-2);
+  }
+  details.pista[open]{border-style:solid;border-color:var(--brand);}
+  details.pista summary{cursor:pointer;font-weight:700;font-size:.9rem;color:var(--brand-dark);list-style:none;user-select:none;}
+  details.pista summary::-webkit-details-marker{display:none;}
+  details.pista summary::before{content:"💡 ";}
+  details.pista summary:hover{text-decoration:underline;}
+  details.pista > *:not(summary){margin-top:.85rem;font-size:.92rem;color:var(--ink-soft);}
+  details.pista ul{margin-bottom:0;}
+
+  /* ---------- TABLA ---------- */
+  .tabla-scroll{overflow-x:auto;margin:1rem 0;-webkit-overflow-scrolling:touch;}
+  table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:520px;}
+  th,td{text-align:left;padding:.7rem .85rem;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:var(--surface-2);font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* ---------- NAV ---------- */
+  nav.indice{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:1.5rem;margin-bottom:2.5rem;box-shadow:var(--shadow);
+  }
+  nav.indice h2{margin:0 0 1rem;font-size:.82rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);}
+  nav.indice ol{margin:0;padding-left:1.3rem;columns:2;column-gap:2rem;}
+  nav.indice li{margin-bottom:.45rem;break-inside:avoid;}
+  nav.indice a{color:var(--accent);text-decoration:none;font-weight:600;font-size:.93rem;}
+  nav.indice a:hover{color:var(--brand-dark);text-decoration:underline;}
+  @media (max-width:600px){nav.indice ol{columns:1;}}
+
+  footer{border-top:1px solid var(--line);padding:2rem 0;text-align:center;color:var(--ink-soft);font-size:.85rem;}
+
+  a{color:var(--brand-dark);}
+  :focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:4px;}
+
+  @media (max-width:640px){
+    section.bloque{padding:1.5rem 1.15rem;}
+    .wrap{padding:0 1rem;}
+    header.hero{padding:2.5rem 0 2rem;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker">Módulo 7 · Lección 2 · Actividad práctica</span>
+    <h1>Registro de Personal</h1>
+    <p class="lead">
+      Construye un panel Vue 3 que administre personas contra una API real: listar,
+      ver el detalle, crear, editar de dos maneras distintas y eliminar.
+      Los cinco verbos de HTTP, cada uno con su propio motivo de existir.
+    </p>
+
+    <div class="hero-facts">
+      <div class="fact"><strong>6 bloques</strong>en orden, a tu ritmo</div>
+      <div class="fact"><strong>CRUD completo</strong>GET · POST · PUT · PATCH · DELETE</div>
+      <div class="fact"><strong>Vue 3 + Axios</strong>Composition API</div>
+      <div class="fact"><strong>API real</strong>localhost:3001</div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <div class="callout">
+    <strong>Esto no es "hacer un formulario".</strong>
+    <p>
+      Un CRUD completo obliga a tomar decisiones que un listado no exige: cuándo un cambio
+      es un reemplazo y cuándo es un retoque, qué diferencia hay entre un dato mal escrito
+      y uno que ya existe, y qué haces cuando el servidor responde correctamente pero
+      <strong>sin decir nada</strong>. Ahí está el aprendizaje. El formulario es la excusa.
+    </p>
+  </div>
+
+  <nav class="indice">
+    <h2>Ruta de trabajo</h2>
+    <ol>
+      <li><a href="#contexto">El encargo</a></li>
+      <li><a href="#servidor">El servidor</a></li>
+      <li><a href="#b1">Listar personas</a></li>
+      <li><a href="#b2">Ver la ficha de una</a></li>
+      <li><a href="#b3">Iniciar sesión con JWT</a></li>
+      <li><a href="#b4">Crear una persona</a></li>
+      <li><a href="#b5">Editar: PUT contra PATCH</a></li>
+      <li><a href="#b6">Eliminar del registro</a></li>
+      <li><a href="#extra">Si terminas antes</a></li>
+    </ol>
+  </nav>
+
+<!-- ============ CONTEXTO ============ -->
+<section class="bloque" id="contexto">
+  <div class="bloque__head">
+    <span class="num">📋</span>
+    <h2>El encargo</h2>
+    <span class="tag">Contexto</span>
+  </div>
+
+  <p>
+    El área de Recursos Humanos de una empresa mantiene su <strong>registro de personal</strong>
+    en una planilla compartida. Cada vez que alguien entra, cambia de cargo o se va,
+    hay que editar la planilla a mano. Ya van dos veces que dos personas la editan al mismo
+    tiempo y se pierde el trabajo de una.
+  </p>
+
+  <p>
+    Te contratan para construir el <strong>panel web del registro de personal</strong>.
+    Necesitan poder hacer las cinco cosas que hoy hacen en la planilla:
+  </p>
+
+  <ol>
+    <li>Ver el listado de personas, con filtros</li>
+    <li>Abrir la ficha completa de una</li>
+    <li>Incorporar a alguien nuevo</li>
+    <li>Corregir datos — a veces un campo suelto, a veces la ficha entera</li>
+    <li>Dar de baja a quien ya no trabaja ahí</li>
+  </ol>
+
+  <p>
+    <strong>El servidor ya existe y no lo vas a tocar.</strong> Tu trabajo es del lado del cliente.
+  </p>
+
+  <div class="callout callout--ojo">
+    <strong>Cómo usar esta guía.</strong>
+    <p>
+      Son seis bloques. Trabájalos <strong>en orden</strong> y no pases al siguiente hasta que el
+      anterior funcione. Aquí no hay código para copiar, y es a propósito. Cada bloque tiene una
+      <em>pista</em> plegada al final — ábrela solo cuando lleves un rato realmente atascado.
+    </p>
+  </div>
+
+  <div class="callout callout--stop">
+    <strong>Este recurso NO se comporta igual que el de tickets.</strong>
+    <p>
+      El envoltorio del listado es distinto, el crear devuelve una cabecera que el de tickets
+      no manda, y el eliminar responde de una forma que va a romper tu código si lo copias
+      tal cual. <strong>Está hecho a propósito.</strong> Si vienes de la clase en vivo y pegas
+      el mismo servicio, no va a funcionar — y descubrir <em>por qué</em> es el ejercicio.
+    </p>
+    <p>
+      Regla que se repite en todo el módulo: <strong>mira la respuesta real antes de escribir
+      la primera línea.</strong>
+    </p>
+  </div>
+</section>
+
+<!-- ============ SERVIDOR ============ -->
+<section class="bloque" id="servidor">
+  <div class="bloque__head">
+    <span class="num">🔌</span>
+    <h2>El servidor con el que trabajas</h2>
+    <span class="tag">Infraestructura</span>
+  </div>
+
+  <p>
+    Usarás el backend <code>node-backend-edu</code> en <code>http://localhost:3001</code>.
+    Levántalo antes de empezar y déjalo corriendo en su propia terminal durante toda la actividad.
+    Dentro de esa carpeta: instala las dependencias y ejecuta el script de desarrollo.
+  </p>
+
+  <h3>Las rutas del recurso</h3>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Método</th><th>Ruta</th><th>Qué hace</th><th>¿Token?</th></tr></thead>
+    <tbody>
+      <tr><td><span class="verbo get">GET</span></td><td><code>/api/personas</code></td><td>Lista con filtros, orden y paginación</td><td>No</td></tr>
+      <tr><td><span class="verbo get">GET</span></td><td><code>/api/personas/departamentos</code></td><td>Valores válidos para el selector</td><td>No</td></tr>
+      <tr><td><span class="verbo get">GET</span></td><td><code>/api/personas/:id</code></td><td>Ficha de una persona</td><td>No</td></tr>
+      <tr><td><span class="verbo post">POST</span></td><td><code>/api/personas</code></td><td>Incorpora a alguien</td><td><strong>Sí</strong></td></tr>
+      <tr><td><span class="verbo put">PUT</span></td><td><code>/api/personas/:id</code></td><td>Reemplaza la ficha completa</td><td><strong>Sí</strong></td></tr>
+      <tr><td><span class="verbo patch">PATCH</span></td><td><code>/api/personas/:id</code></td><td>Cambia solo algunos campos</td><td><strong>Sí</strong></td></tr>
+      <tr><td><span class="verbo delete">DELETE</span></td><td><code>/api/personas/:id</code></td><td>Elimina del registro</td><td><strong>Sí, y solo rol admin</strong></td></tr>
+      <tr><td><span class="verbo post">POST</span></td><td><code>/api/login</code></td><td>Entrega el token y los datos del usuario</td><td>No</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Credenciales</h3>
+  <p>
+    Hay <strong>dos usuarios y no es un detalle decorativo</strong>: uno de ellos no puede
+    eliminar. Vas a necesitar los dos en el bloque 6.
+  </p>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Usuario</th><th>Contraseña</th><th>Rol</th><th>¿Puede eliminar?</th></tr></thead>
+    <tbody>
+      <tr><td><code>admin</code></td><td><code>admin123</code></td><td><code>admin</code></td><td>Sí</td></tr>
+      <tr><td><code>operador</code></td><td><code>operador123</code></td><td><code>operador</code></td><td><strong>No</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Forma de una persona</h3>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>Número</td><td>Lo asigna el servidor</td></tr>
+      <tr><td><code>rut</code></td><td>Texto</td><td>Obligatorio. El servidor <strong>verifica el dígito verificador</strong>, no solo el formato. Se guarda normalizado, sin puntos</td></tr>
+      <tr><td><code>nombre</code></td><td>Texto</td><td>Obligatorio, entre 2 y 40 caracteres</td></tr>
+      <tr><td><code>apellido</code></td><td>Texto</td><td>Obligatorio, entre 2 y 60 caracteres</td></tr>
+      <tr><td><code>email</code></td><td>Texto</td><td>Obligatorio. Además del formato, hay una <strong>regla de negocio</strong> sobre el dominio. Descúbrela provocando el error</td></tr>
+      <tr><td><code>telefono</code></td><td>Texto o nulo</td><td><strong>Opcional.</strong> Si lo mandas, tiene un formato exigido</td></tr>
+      <tr><td><code>cargo</code></td><td>Texto</td><td>Obligatorio, mínimo 3 caracteres</td></tr>
+      <tr><td><code>departamento</code></td><td>Texto</td><td>Solo acepta ciertos valores. No los escribas a mano: hay una ruta que te los da</td></tr>
+      <tr><td><code>activo</code></td><td>Booleano</td><td>Verdadero o falso <strong>de verdad</strong>, no el texto <code>"true"</code></td></tr>
+      <tr><td><code>creadoEn</code> / <code>actualizadoEn</code></td><td>Texto</td><td>Fechas ISO que pone el servidor</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout callout--ojo">
+    <strong>Un RUT no es un texto con un guion.</strong>
+    <p>
+      Es un número con un <strong>dígito de control</strong>, igual que el código de barras de un
+      producto o el número de una tarjeta. El último carácter se calcula a partir de los
+      anteriores mediante una fórmula, y el servidor la aplica.
+    </p>
+    <p>
+      Prueba esto antes de seguir: el RUT <code>12.345.678-9</code>, que todo el mundo escribe
+      como ejemplo, <strong>es inválido</strong>. Manda una persona con ese RUT y lee lo que te
+      responde el servidor. Ese mensaje te va a servir todo el ejercicio.
+    </p>
+  </div>
+
+  <div class="callout callout--stop">
+    <strong>Dos servidores, dos terminales.</strong>
+    <p>
+      El backend en el puerto <strong>3001</strong> y tu aplicación Vue en el <strong>5173</strong>.
+      Si cierras la terminal del backend, tu aplicación va a fallar con errores de red y vas a perder
+      veinte minutos buscando el bug en tu código cuando el problema es que el servidor está apagado.
+      Le ha pasado a todos.
+    </p>
+    <p>
+      Y otra cosa: <strong>los datos viven en memoria</strong>. Cada vez que reinicias el backend,
+      todo vuelve a las doce personas originales. Si eliminaste a alguien y reapareció, no es un
+      bug tuyo.
+    </p>
+  </div>
+</section>
+
+<!-- ============ BLOQUE 1 ============ -->
+<section class="bloque" id="b1">
+  <div class="bloque__head">
+    <span class="num">1</span>
+    <h2>Listar personas</h2>
+    <span class="tag">Lectura</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Mostrar las personas en pantalla al cargar la página.</li>
+    <li>Cada una se ve como una fila o tarjeta con su nombre completo, RUT, cargo, departamento y si está activa o no.</li>
+    <li>Un filtro por <strong>departamento</strong>, cuyas opciones <strong>no están escritas a mano en tu código</strong>: se piden al servidor.</li>
+    <li>Un filtro para ver solo activas, solo inactivas, o todas.</li>
+    <li>Un buscador por texto.</li>
+    <li>Controles de <strong>paginación</strong> que se deshabiliten solos cuando no haya página anterior o siguiente.</li>
+    <li>Mostrar cuántas personas hay en total según el filtro aplicado.</li>
+    <li>La comunicación con la API debe estar en una <strong>capa de servicios</strong> aparte. Ningún componente lleva la dirección del servidor escrita dentro.</li>
+  </ul>
+
+  <h3>Los cuatro estados obligatorios</h3>
+  <ol>
+    <li><strong>Cargando</strong> — mientras esperas la respuesta.</li>
+    <li><strong>Error</strong> — si la petición falla, con un mensaje en lenguaje humano y una forma de reintentar.</li>
+    <li><strong>Vacío</strong> — si el filtro no devuelve a nadie. Y ojo: "no hay nadie con ese filtro" no es lo mismo que "no hay nadie". Ofrece limpiar el filtro.</li>
+    <li><strong>Con datos</strong> — la lista renderizada.</li>
+  </ol>
+
+  <div class="callout callout--ojo">
+    <strong>Antes de programar, mira la respuesta.</strong>
+    <p>
+      Pide <code>/api/personas</code> desde el navegador y observa qué llega.
+      <strong>No es un arreglo pelado</strong>, y tampoco tiene los mismos nombres que el listado
+      de tickets que viste en clase. Es un objeto con dos propiedades: una trae los registros y
+      la otra la información para paginar. Averigua cómo se llaman <em>de verdad</em> antes de
+      escribir tu servicio.
+    </p>
+  </div>
+
+  <h3>La prueba de este bloque</h3>
+  <ol>
+    <li>Filtra por un departamento. Comprueba que el total cambia y que la paginación se recalcula.</li>
+    <li>Pide a mano <code>/api/personas?departamento=marketing</code>. El servidor responde con un error. Tu aplicación no debería poder llegar a ese estado nunca — porque las opciones las obtiene del servidor. Pero si igual llega, tiene que sobrevivir.</li>
+    <li>Ponte en la última página y luego cambia el filtro. Si tu aplicación se queda pidiendo una página que ya no existe, arréglalo.</li>
+  </ol>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que hayas leído la forma real de la respuesta antes de escribir código.</li>
+    <li>Que las opciones del selector de departamento vengan del servidor y no estén escritas a mano.</li>
+    <li>Que la dirección base del servidor esté declarada en un solo lugar del proyecto.</li>
+    <li>Que el indicador de carga se apague <strong>siempre</strong>, salga bien o mal la petición.</li>
+    <li>Que la consola del navegador esté limpia.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — organización, filtros y paginación</summary>
+    <ul>
+      <li>La librería que usamos permite crear una <em>instancia</em> preconfigurada con la dirección base y un tiempo máximo de espera. Créala una vez, expórtala, e impórtala donde la necesites. Si mañana cambia el dominio del servidor, tocas una línea.</li>
+      <li>Separa en dos archivos: uno que configura <em>cómo</em> se habla con el servidor y otro que declara <em>qué</em> se le pide.</li>
+      <li>Para los parámetros de la URL no los concatenes a mano. La librería acepta un objeto de opciones con una propiedad dedicada a eso, y se encarga de codificarlos correctamente.</li>
+      <li><strong>Cuidado con los filtros vacíos.</strong> Si mandas un departamento como cadena vacía, el servidor lo va a tomar como un valor y te va a responder con un error. Quita del objeto las claves que no tengan valor antes de enviarlo.</li>
+      <li>Cuando cambia un filtro, la página actual deja de tener sentido. Vuelve a la primera. Un observador reactivo sobre los filtros te resuelve esto en tres líneas.</li>
+      <li>La respuesta de esta librería es un objeto con varias propiedades. Los datos vienen dentro de una de ellas. Y <em>dentro</em> de esos datos hay otra capa más, con nombres que tienes que ir a mirar.</li>
+      <li>Hay una tercera cláusula que acompaña al bloque de intento y captura, y que se ejecuta pase lo que pase. Ese es el lugar correcto para apagar el indicador de carga.</li>
+      <li>La carga inicial va en el gancho del ciclo de vida que se dispara cuando el componente ya está en el DOM.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 2 ============ -->
+<section class="bloque" id="b2">
+  <div class="bloque__head">
+    <span class="num">2</span>
+    <h2>Ver la ficha de una persona</h2>
+    <span class="tag">Lectura</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Al hacer clic en una persona, mostrar su ficha completa, pedida al servidor por su identificador.</li>
+    <li>La ficha incluye el correo, el teléfono y las fechas de creación y última modificación.</li>
+    <li>Si la persona no tiene teléfono registrado, mostrar algo digno. Ni <code>null</code>, ni un espacio en blanco sospechoso.</li>
+    <li>Mientras se carga la ficha, un indicador de carga propio. La lista no debe desaparecer.</li>
+    <li>Una forma clara de volver o cerrar la ficha.</li>
+    <li>Si se pide una persona que no existe, mostrar un mensaje comprensible sin romper la vista.</li>
+  </ul>
+
+  <h3>La prueba de este bloque</h3>
+  <p>
+    Pide a mano la ficha de una persona con un identificador inventado, por ejemplo el 999.
+    Tu aplicación tiene que responder con dignidad: nada de pantalla en blanco ni de errores crudos.
+  </p>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que la ficha se pida al servidor y no se arme buscando dentro de la lista que ya tenías. Piensa por qué: la lista podría estar desactualizada, y otra persona pudo haber editado ese registro hace un segundo.</li>
+    <li>Que el estado de carga de la ficha sea <strong>independiente</strong> del de la lista.</li>
+    <li>Que el caso "no existe" esté resuelto y puedas demostrarlo.</li>
+    <li>Que un campo nulo se muestre de forma intencionada, no por accidente.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — ficha y errores</summary>
+    <ul>
+      <li>La ruta de la ficha lleva el identificador dentro de la propia dirección. Constrúyela con una plantilla de texto, no concatenando a mano.</li>
+      <li>A diferencia del listado, esta respuesta <strong>sí</strong> viene directa: un solo objeto, sin capas adicionales. Compruébalo antes de asumir.</li>
+      <li>Cuando el recurso no existe, el servidor responde con un código específico y un mensaje propio en el cuerpo. Muestra <strong>ese</strong> mensaje: es más preciso que cualquier texto genérico tuyo.</li>
+      <li>Necesitas variables reactivas separadas para la ficha: una para la persona seleccionada, otra para su carga y otra para su error. Reutilizar las de la lista te va a dar comportamientos raros.</li>
+      <li>Para el teléfono nulo, cualquier operador que devuelva un valor alternativo cuando el original es nulo te sirve. Pero fíjate en cuál eliges: hay uno que también reemplaza la cadena vacía y el cero, y otro que solo reacciona a nulo e indefinido. Esa diferencia importa más de lo que parece.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 3 ============ -->
+<section class="bloque" id="b3">
+  <div class="bloque__head">
+    <span class="num">3</span>
+    <h2>Iniciar sesión con JWT</h2>
+    <span class="tag">Sesión</span>
+  </div>
+
+  <p>
+    Los tres bloques que vienen escriben datos, y el servidor no deja escribir a cualquiera.
+    Antes de seguir, necesitas una sesión.
+  </p>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un formulario con usuario y contraseña que envíe las credenciales al servidor y reciba el token.</li>
+    <li>El botón de envío deshabilitado mientras la petición está en curso y mientras el formulario esté incompleto.</li>
+    <li>Si las credenciales son incorrectas, un mensaje claro. El formulario no se rompe ni se vacía.</li>
+    <li>Con sesión activa, mostrar en pantalla <strong>el nombre de la persona y su rol</strong>.</li>
+    <li>La sesión debe <strong>sobrevivir a un refresco de página</strong>.</li>
+    <li>Un botón de cerrar sesión que limpie todo y devuelva la interfaz al estado inicial.</li>
+    <li>La contraseña no debe quedar guardada en ningún lado después del acceso.</li>
+    <li><strong>Sin sesión, la lectura sigue funcionando.</strong> Listar y ver fichas es público. Lo que desaparece son los botones de escribir.</li>
+  </ul>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que puedas explicar las <strong>tres partes</strong> de un token, qué hay en cada una y cuál es la que realmente protege.</li>
+    <li>Que justifiques dónde decidiste guardar el token y cuál es el riesgo de esa decisión.</li>
+    <li>Que el nombre y el rol que muestras salgan de una fuente que puedas explicar.</li>
+    <li>Que la aplicación siga siendo útil sin sesión, en vez de mostrar una pantalla de acceso y nada más.</li>
+  </ul>
+
+  <div class="callout callout--stop">
+    <strong>Lo más importante que vas a aprender hoy sobre tokens.</strong>
+    <p>
+      El contenido de un token <strong>se puede leer</strong>. No está encriptado: solo codificado.
+      Cualquiera que lo tenga puede ver qué hay dentro, sin ninguna clave. Averigua por qué eso no es
+      una falla de diseño, qué es lo que sí lo protege, y qué consecuencia tiene para lo que un
+      servidor puede o no puede guardar ahí dentro.
+    </p>
+  </div>
+
+  <details class="pista">
+    <summary>Pista — token y sesión</summary>
+    <ul>
+      <li>Mira la respuesta completa del acceso: además del token trae los datos del usuario ya listos. Eso te ahorra trabajo, aunque también puedes sacarlos del propio token. Ambas vías son válidas: elige una y ten lista tu justificación.</li>
+      <li>El token está formado por tres partes separadas por puntos. La del medio contiene los datos y viene codificada en una variante de Base64 que reemplaza dos caracteres. Si decides decodificarla, tendrás que revertir ese reemplazo primero, o vas a obtener basura de forma intermitente.</li>
+      <li>Copia tu token y pégalo en <a href="https://jwt.io" target="_blank" rel="noopener">jwt.io</a> para ver qué contiene. Eso solo te responde la mitad de las preguntas de este bloque.</li>
+      <li>Para que la sesión sobreviva al refresco necesitas guardarla en el navegador. Investiga qué opciones existen y cuál es el riesgo de cada una — porque te lo van a preguntar.</li>
+      <li>Al recargar la página, tu aplicación debe recuperar la sesión guardada al arrancar. Si no lo haces, el token está ahí pero tu interfaz no se entera.</li>
+      <li>El rol viene dentro del token y también en la respuesta del acceso. Lo vas a necesitar en el bloque 6 para decidir qué botones mostrar — pero lee con atención lo que dice ese bloque sobre esconder botones.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 4 ============ -->
+<section class="bloque" id="b4">
+  <div class="bloque__head">
+    <span class="num">4</span>
+    <h2>Crear una persona</h2>
+    <span class="tag">Escritura · POST</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un formulario con todos los campos que exige el servidor.</li>
+    <li>El departamento se elige de una lista — la misma que ya pediste en el bloque 1, no la escribas dos veces.</li>
+    <li>El formulario solo está disponible <strong>con sesión activa</strong>.</li>
+    <li>Al crear, la credencial de sesión debe viajar en la petición. Sin ella, el servidor rechaza.</li>
+    <li>Si el servidor rechaza por validación, mostrar el error <strong>debajo de cada campo</strong> que lo tiene.</li>
+    <li>Si el servidor rechaza porque el RUT o el correo <strong>ya existen</strong>, ese mensaje también va bajo su campo. Pero fíjate en el código: <strong>no es el mismo error que el anterior</strong>.</li>
+    <li>Si todo sale bien: mensaje de confirmación, el formulario se limpia, y la persona nueva aparece en la lista <strong>sin recargar la página</strong>.</li>
+    <li>No se puede enviar el formulario dos veces por hacer doble clic.</li>
+  </ul>
+
+  <div class="callout callout--ojo">
+    <strong>Dos rechazos que parecen el mismo y no lo son.</strong>
+    <p>
+      Manda un RUT con el dígito verificador cambiado: el servidor responde con un código.
+      Ahora manda un RUT perfectamente válido pero que <strong>ya está registrado</strong>:
+      responde con <em>otro</em> código distinto.
+    </p>
+    <p>
+      Averigua cuáles son y, sobre todo, <strong>por qué son distintos</strong>. Pista conceptual:
+      en el primer caso el dato está mal escrito. En el segundo el dato está impecable — el
+      problema es el estado del sistema. Un buen cliente no los muestra igual, porque la acción
+      que debe tomar el usuario tampoco es la misma.
+    </p>
+  </div>
+
+  <div class="callout">
+    <strong>Una cabecera que casi nadie usa.</strong>
+    <p>
+      Cuando la creación tiene éxito, este servidor devuelve algo más que el objeto: manda una
+      <strong>cabecera de respuesta</strong> que indica dónde quedó el recurso recién creado.
+      Es lo que dice el estándar de HTTP y casi ninguna API lo hace.
+    </p>
+    <p>
+      Encuéntrala en la pestaña de red del navegador y muéstrala en tu interfaz, aunque sea en la
+      consola. Y averigua por qué puedes leerla desde JavaScript: <strong>no todas las cabeceras
+      son visibles para tu código</strong>, y hay una configuración del servidor que decide eso.
+    </p>
+  </div>
+
+  <h3>La prueba de este bloque</h3>
+  <ol>
+    <li>Sin haber iniciado sesión, intenta crear. Observa qué responde el servidor.</li>
+    <li>Inicia sesión y repite. Ahora debe funcionar.</li>
+    <li>Envía un RUT inválido, un correo de un dominio cualquiera, un nombre de una letra y un teléfono con formato libre. Comprueba que cada campo muestra <strong>su propio</strong> error.</li>
+    <li>Crea a alguien con el RUT de una persona que ya existe. Observa el código y el mensaje.</li>
+    <li>Crea a alguien válido <strong>sin teléfono</strong>. Debe funcionar: es opcional. Fíjate qué guarda el servidor en ese campo.</li>
+    <li>Crea a alguien escribiendo el RUT con puntos. Mira cómo te lo devuelve el servidor.</li>
+  </ol>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que la credencial viaje correctamente y puedas demostrarlo en la pestaña de red del navegador.</li>
+    <li>Que distingas en la interfaz el rechazo por validación del rechazo por duplicado.</li>
+    <li>Que los errores se muestren por campo y no todos juntos.</li>
+    <li>Que la lista se actualice usando la respuesta del servidor, no con una recarga completa.</li>
+    <li>Que hayas notado que el servidor <strong>transforma</strong> algunos datos antes de guardarlos, y que tu interfaz muestre lo que el servidor guardó, no lo que el usuario escribió.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — credencial, validación y duplicados</summary>
+    <ul>
+      <li>La credencial viaja en una cabecera de la petición con un formato específico: una palabra clave, un espacio y el token. Si la escribes mal, el servidor te rechaza con un mensaje que no siempre explica por qué. Búscala en la documentación del backend.</li>
+      <li>Si ya sabes registrar interceptores, este es el momento de usarlos y no repetir la cabecera en cada llamada. Si todavía no, hacerlo a mano está bien y te obliga a entender qué se envía.</li>
+      <li>Cuando la validación falla, el cuerpo de la respuesta trae un objeto donde cada clave es el nombre de un campo. Si tus variables del formulario usan esos mismos nombres, mostrar el error debajo de cada uno se vuelve trivial.</li>
+      <li>El rechazo por duplicado trae el detalle con <strong>la misma estructura</strong> que el de validación. Eso significa que puedes reutilizar tu código para pintarlo — pero el mensaje que acompaña arriba debería ser distinto, porque el usuario tiene que hacer algo distinto.</li>
+      <li>Acuérdate de limpiar los errores anteriores antes de cada envío. Si no, el usuario ve errores viejos de campos que ya corrigió.</li>
+      <li>Para evitar el doble envío, deshabilita el botón mientras la petición está en curso. Es la misma técnica del indicador de carga.</li>
+      <li>Las cabeceras de la respuesta están disponibles en el objeto que devuelve la librería, en una propiedad hermana de la que trae los datos. Los nombres de cabecera se leen en minúsculas.</li>
+      <li>El servidor devuelve la persona ya creada, con su identificador y sus datos normalizados. Agrégala a tu lista en memoria en vez de volver a pedir todo — pero si tenías un filtro activo, piensa si esa persona debería aparecer o no.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 5 ============ -->
+<section class="bloque" id="b5">
+  <div class="bloque__head">
+    <span class="num">5</span>
+    <h2>Editar: PUT contra PATCH</h2>
+    <span class="tag">Escritura · El bloque clave</span>
+  </div>
+
+  <p>
+    Este es el bloque que separa a quien sabe hacer un formulario de quien entiende HTTP.
+    Vas a implementar <strong>las dos formas de editar</strong>, y no porque queden bonitas:
+    porque resuelven problemas distintos.
+  </p>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un <strong>formulario de edición completa</strong> que reemplace la ficha entera de la persona.</li>
+    <li>Una <strong>acción rápida</strong> que cambie un solo campo sin abrir ningún formulario: un interruptor para activar o desactivar a la persona directamente desde la lista.</li>
+    <li>Cada una debe usar el verbo que le corresponde. No uses el mismo para las dos.</li>
+    <li>El interruptor debe reflejar el estado real después de la respuesta del servidor, no antes.</li>
+    <li>Ambas operaciones muestran los errores de validación por campo, igual que al crear.</li>
+    <li>Ambas manejan el rechazo por duplicado: puedes cambiarle el correo a alguien y chocar con el de otra persona.</li>
+  </ul>
+
+  <div class="callout callout--stop">
+    <strong>El experimento obligatorio de este bloque. Hazlo antes de escribir el formulario.</strong>
+    <p>
+      Busca en la lista a alguien que <strong>sí tenga teléfono registrado</strong>. Anota su
+      teléfono. Ahora, desde la pestaña de red o desde donde prefieras, haz estas dos cosas por
+      separado:
+    </p>
+    <ol>
+      <li>Cámbiale <strong>solo el cargo</strong> usando <span class="verbo patch">PATCH</span>. Vuelve a pedir su ficha. ¿Sigue teniendo teléfono?</li>
+      <li>Cámbiale <strong>solo el cargo</strong> usando <span class="verbo put">PUT</span>, mandando los campos obligatorios pero <em>sin incluir el teléfono</em>. Vuelve a pedir su ficha. ¿Sigue teniendo teléfono?</li>
+    </ol>
+    <p>
+      Los dos resultados son <strong>correctos</strong>. Ninguno es un bug. Cuando entiendas por qué,
+      entendiste la diferencia — y vas a saber exactamente cuál de los dos usar en cada pantalla que
+      construyas el resto de tu carrera.
+    </p>
+  </div>
+
+  <h3>La otra diferencia, la que se ve en el error</h3>
+  <p>
+    Intenta editar a alguien enviando <strong>solamente el nombre</strong>, primero con un verbo y
+    después con el otro. Uno de los dos te va a rechazar la petición y el otro la va a aceptar sin
+    quejarse. Eso no es inconsistencia del servidor: es la definición de cada verbo aplicada con
+    rigor. Explica cuál rechaza y por qué tiene razón.
+  </p>
+
+  <h3>La prueba de este bloque</h3>
+  <ol>
+    <li>Edita a alguien con el formulario completo y verifica que todos los campos quedaron como los dejaste.</li>
+    <li>Usa el interruptor de activo/inactivo y verifica que <strong>no se perdió ningún otro dato</strong>.</li>
+    <li>Intenta ponerle a una persona el correo de otra. Observa el código de respuesta.</li>
+    <li>Intenta editar a la persona con identificador 999.</li>
+    <li>Manda una petición de edición con el cuerpo completamente vacío. Los dos verbos reaccionan distinto. Averigua cómo.</li>
+  </ol>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li><strong>Que puedas explicar, con tu propio ejemplo del experimento, la diferencia entre los dos verbos.</strong> Esto vale más que el código.</li>
+    <li>Que hayas elegido el verbo correcto para cada una de las dos operaciones, y sepas justificarlo.</li>
+    <li>Que el formulario de edición llegue precargado con los datos actuales de la persona.</li>
+    <li>Que el interruptor no deje la interfaz mostrando un estado que el servidor nunca confirmó.</li>
+    <li>Que sepas qué significa que uno de los dos verbos sea <em>idempotente</em> y el otro no necesariamente.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — los dos verbos, precarga y el interruptor</summary>
+    <ul>
+      <li>Uno de los dos verbos significa "esta es la ficha completa, reemplázala por esto". Si omites un campo opcional, no estás diciendo "déjalo como está": estás diciendo "esta ficha no tiene ese campo". El servidor te hace caso.</li>
+      <li>El otro significa "cambia solo esto y no toques nada más". Por eso puede recibir un solo campo sin quejarse.</li>
+      <li>Para precargar el formulario, copia los datos de la persona a tu objeto reactivo — pero <strong>cópialos, no los referencies</strong>. Si asignas el objeto directamente, vas a estar editando el mismo objeto que está en la lista, y vas a ver los cambios reflejados antes de guardar. Se ve mágico y es un bug.</li>
+      <li>El interruptor manda un valor booleano. Si tu control envía la cadena <code>"true"</code> en vez del booleano verdadero, el servidor lo rechaza — y con razón. Revisa si tu enlace de datos necesita algún modificador para convertir el tipo.</li>
+      <li>Para que el interruptor no mienta: no cambies la variable local primero. Espera la respuesta del servidor y actualiza con lo que él devuelve. Si falla, la interfaz nunca llegó a mostrar algo falso.</li>
+      <li>Cuando busques la palabra <em>idempotente</em>, quédate con esta pregunta: si mando exactamente la misma petición cinco veces seguidas, ¿el resultado final es el mismo que si la mando una vez? Eso determina si un cliente puede reintentarla sin miedo cuando se cae la red.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 6 ============ -->
+<section class="bloque" id="b6">
+  <div class="bloque__head">
+    <span class="num">6</span>
+    <h2>Eliminar del registro</h2>
+    <span class="tag">Escritura · DELETE</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un botón para eliminar a una persona del registro, con <strong>confirmación previa</strong>. Es irreversible.</li>
+    <li>Al eliminar, la persona desaparece de la lista sin recargar la página.</li>
+    <li>El botón solo se muestra a quien tiene permiso — pero lee el aviso de abajo antes de sentirte a salvo.</li>
+    <li>Si el servidor rechaza por permisos, un mensaje que explique qué pasó <strong>y que no cierre la sesión</strong>.</li>
+    <li>Si el servidor rechaza por una regla de negocio, un mensaje que le diga al usuario <strong>qué tiene que hacer antes</strong>.</li>
+  </ul>
+
+  <div class="callout callout--stop">
+    <strong>Esta respuesta va a romper tu código, y es a propósito.</strong>
+    <p>
+      Cuando el borrado tiene éxito, este servidor <strong>no devuelve ningún cuerpo</strong>.
+      Ni un mensaje de confirmación, ni el objeto eliminado, ni un <code>{ "ok": true }</code>. Nada.
+    </p>
+    <p>
+      Si tu código intenta leer un mensaje de esa respuesta, va a obtener algo vacío o indefinido y,
+      según cómo lo hayas escrito, puede reventar. <strong>Averigua qué código de estado devuelve</strong>,
+      qué significa exactamente ese número, y por qué está bien que no mande nada.
+    </p>
+    <p>
+      Y después responde esto: si el servidor no te dice nada, <strong>¿cómo sabe tu interfaz que
+      salió bien?</strong>
+    </p>
+  </div>
+
+  <div class="callout callout--ojo">
+    <strong>Hay una regla de negocio esperándote.</strong>
+    <p>
+      No puedes eliminar a cualquiera. El servidor va a rechazar el borrado de ciertas personas
+      con un código de conflicto y un mensaje que te explica el motivo — de hecho, la respuesta
+      incluye un campo que te dice <em>exactamente</em> qué petición tienes que hacer antes.
+    </p>
+    <p>
+      Eso significa que eliminar a alguien puede requerir <strong>dos operaciones encadenadas con
+      verbos distintos</strong>. Tu interfaz debería guiar al usuario en eso, no dejarlo adivinando.
+      Y ya tienes implementadas las dos piezas: solo falta conectarlas.
+    </p>
+  </div>
+
+  <div class="callout callout--stop">
+    <strong>Ocultar un botón no es seguridad.</strong>
+    <p>
+      Vas a esconder el botón de eliminar cuando el rol no corresponda, y está bien: es buena
+      experiencia de uso. Pero <strong>no es protección</strong>. Demuéstratelo tú mismo: inicia
+      sesión con el usuario que no tiene permiso y, desde la consola del navegador, dispara la
+      petición de borrado a mano.
+    </p>
+    <p>
+      El servidor te va a rechazar. <strong>Ese</strong> es el que protege. Tu botón escondido solo
+      evita que un usuario honesto se equivoque.
+    </p>
+  </div>
+
+  <div class="callout">
+    <strong>Y un detalle que te va a doler si no lo piensas: el 403 tiene dos significados.</strong>
+    <p>
+      En esta API, ese código puede significar "tu sesión expiró" o "tu rol no alcanza". Son
+      situaciones completamente distintas: en una hay que volver a entrar, en la otra la sesión
+      está perfecta y el usuario simplemente no puede hacer eso.
+    </p>
+    <p>
+      Si las tratas igual, vas a cerrar la sesión de alguien que solo intentó borrar algo que no le
+      correspondía. Mira el <strong>cuerpo</strong> de la respuesta: en uno de los dos casos trae
+      información adicional sobre roles que el otro no tiene. Ahí está tu forma de distinguirlos.
+    </p>
+  </div>
+
+  <h3>La prueba de este bloque</h3>
+  <ol>
+    <li>Inicia sesión con el usuario sin permisos e intenta eliminar desde la consola. Observa el código y el cuerpo.</li>
+    <li>Comprueba que tu aplicación <strong>no cierra la sesión</strong> en ese caso.</li>
+    <li>Con el usuario correcto, intenta eliminar a alguien que está activo. Lee el mensaje y el campo de sugerencia.</li>
+    <li>Haz lo que el servidor te sugiere y vuelve a intentar. Ahora debe funcionar.</li>
+    <li>Verifica que la persona desapareció pidiendo su ficha directamente. Debe responder que no existe.</li>
+  </ol>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que tu código no dependa de leer un cuerpo que no existe.</li>
+    <li>Que distingas los dos tipos de 403 y puedas demostrarlo.</li>
+    <li>Que la regla de negocio esté resuelta en la interfaz y no le tires el error crudo al usuario.</li>
+    <li>Que la confirmación sea explícita y que la lista quede consistente después del borrado.</li>
+    <li>Que puedas explicar por qué esconder el botón no protege nada.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — respuesta vacía, roles y regla de negocio</summary>
+    <ul>
+      <li>Busca en la lista de códigos de estado de HTTP el que significa literalmente "todo bien, y no hay contenido que devolver". Está en la familia de los que empiezan con 2.</li>
+      <li>Si la petición no lanzó un error, salió bien. Esa es toda la confirmación que necesitas. No busques un mensaje que nadie te mandó — constrúyelo tú en el cliente.</li>
+      <li>Para quitar a la persona de tu lista en memoria, filtra por identificador. Y acuérdate de actualizar el contador del total, o va a quedar desfasado hasta la próxima recarga.</li>
+      <li>El rechazo por rol incluye en el cuerpo dos datos que el rechazo por sesión expirada no tiene. Uno te dice el rol actual y otro los roles requeridos. Si esos campos vienen, es un problema de permisos, no de sesión.</li>
+      <li>El rechazo por la regla de negocio trae, además del mensaje, un campo con la petición exacta que falta ejecutar. Puedes usarlo para ofrecerle al usuario un botón que la haga por él.</li>
+      <li>Para la confirmación, el diálogo nativo del navegador es suficiente para esta entrega. Si quieres algo mejor, hazlo — pero primero que funcione.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ EXTRA ============ -->
+<section class="bloque" id="extra">
+  <div class="bloque__head">
+    <span class="num">🚀</span>
+    <h2>Si terminas antes</h2>
+    <span class="tag">Opcional</span>
+  </div>
+
+  <p>
+    Solo si los seis bloques están terminados y funcionando. No empieces por acá:
+    entregar seis cosas sólidas vale más que doce a medias.
+  </p>
+
+  <h3>Nivel 1 — pulir lo que ya tienes</h3>
+  <ol>
+    <li><strong>Validación previa del RUT en el navegador.</strong> Investiga el algoritmo módulo 11 e impleméntalo, para avisar antes de gastar una petición. Pero ojo: eso <strong>no reemplaza</strong> la validación del servidor. ¿Sabes por qué?</li>
+    <li><strong>Formatear el RUT al mostrarlo</strong> con puntos y guion, aunque se guarde sin puntos. Separar cómo se guarda un dato de cómo se muestra es una decisión de diseño, no un capricho.</li>
+    <li><strong>Distintivo visual para las personas inactivas,</strong> que se note <em>sin depender solo del color</em>, para quien no distingue colores.</li>
+    <li><strong>Antigüedad:</strong> mostrar "lleva 2 años en la empresa" calculado desde la fecha de creación.</li>
+    <li><strong>Notificación temporal</strong> que confirme cada operación y desaparezca sola.</li>
+    <li><strong>Buscador con retardo:</strong> que no dispare una petición por cada tecla, sino que espere a que el usuario deje de escribir.</li>
+  </ol>
+
+  <h3>Nivel 2 — conceptos nuevos</h3>
+  <ol>
+    <li><strong>Interceptores:</strong> que la credencial se adjunte sola a cada petición protegida, en vez de escribirla en cada llamada. Investiga cómo se registran sobre la instancia que ya creaste.</li>
+    <li><strong>Traductor de errores centralizado:</strong> una única función que convierta cualquier fallo — sin red, tiempo agotado, 401, 403, 404, 409, 422 — en un mensaje humano. Que ningún componente vuelva a mirar un código de estado.</li>
+    <li><strong>Composables:</strong> extrae la lógica de sesión y la de la lista a funciones reutilizables fuera de los componentes. Y responde esta pregunta antes de escribirlas: ¿el estado va <em>dentro</em> o <em>fuera</em> de la función? Las dos opciones funcionan y hacen cosas muy distintas.</li>
+    <li><strong>Cuenta regresiva de la sesión:</strong> muestra cuánto le queda al token. El campo de expiración viene en <strong>segundos</strong> y la función de JavaScript que da la hora actual devuelve <strong>milisegundos</strong>. Ese detalle es el error clásico de esta lección.</li>
+    <li><strong>Actualización optimista:</strong> que el interruptor de activo cambie de inmediato en la interfaz y se revierta solo si el servidor falla. Es lo contrario de lo que te pedí en el bloque 5 — impleméntalo y decide cuál prefieres y por qué. Las dos son decisiones legítimas.</li>
+  </ol>
+
+  <div class="callout">
+    <strong>Y el cierre, que no es sobre código.</strong>
+    <p>
+      Los cinco verbos no son cinco formas de decir lo mismo. Cada uno declara una
+      <em>intención</em> distinta, y el servidor te toma la palabra. Si terminas esta actividad
+      sabiendo cuándo usar cada uno, qué significa que una respuesta venga vacía y por qué
+      un dato duplicado no es un dato inválido, ya cumpliste el objetivo.
+    </p>
+    <p>
+      Los conceptos primero. El código después.
+    </p>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Módulo 7 · Lección 2 — Consumo de datos desde una API · Actividad práctica: CRUD completo
+  </div>
+</footer>
+
+</body>
+</html>
