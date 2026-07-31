@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Actividad práctica de Vue 3 + Cloud Firestore: CRUD completo de la carta de un food truck — Módulo 7, Lección 2.">
+<title>Actividad Práctica · Food Truck — Vue 3 y Firestore</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --surface:#ffffff;
+    --surface-2:#eef1f4;
+    --ink:#181c22;
+    --ink-soft:#59646f;
+    --line:#dfe4e9;
+    --brand:#42b883;
+    --brand-ink:#0d2b1e;
+    --brand-dark:#2b8460;
+    --accent:#2c3e50;
+    --warn:#d98a1f;
+    --warn-bg:#fdf6e8;
+    --danger:#c0392b;
+    --code-bg:#1e2430;
+    --code-ink:#e6edf3;
+    --radius:14px;
+    --shadow:0 1px 3px rgba(16,24,32,.06), 0 8px 24px rgba(16,24,32,.05);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12161b;
+      --surface:#1a2027;
+      --surface-2:#222a33;
+      --ink:#e8edf2;
+      --ink-soft:#9aa7b4;
+      --line:#2b343e;
+      --accent:#8fd8b6;
+      --brand-dark:#5fd39f;
+      --warn:#e8b45c;
+      --warn-bg:#2b2416;
+      --danger:#f08b7f;
+      --shadow:0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:900px;margin:0 auto;padding:0 1.5rem;}
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    background:linear-gradient(140deg,#1f2d3d 0%,#16212c 55%,#123a3f 100%);
+    color:#f2f6f9;padding:3.5rem 0 3rem;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .kicker{
+    display:inline-flex;align-items:center;gap:.5rem;
+    background:rgba(66,184,131,.16);color:#7de3b3;
+    border:1px solid rgba(66,184,131,.35);
+    font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    padding:.35rem .85rem;border-radius:999px;margin-bottom:1.25rem;
+  }
+  header.hero h1{margin:0 0 .75rem;font-size:clamp(1.75rem,4.5vw,2.6rem);line-height:1.15;letter-spacing:-.02em;}
+  header.hero .lead{margin:0;color:#b6c6d3;max-width:62ch;font-size:1.05rem;}
+
+  .hero-facts{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem;}
+  .fact{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    border-radius:10px;padding:.6rem 1rem;font-size:.85rem;color:#cfdbe5;
+  }
+  .fact strong{display:block;color:#fff;font-size:1rem;}
+
+  /* ---------- BLOQUES ---------- */
+  main{padding:3rem 0 6rem;}
+  section.bloque{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:2rem;margin-bottom:1.75rem;
+  }
+  .bloque__head{
+    display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
+    margin:0 0 1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--line);
+  }
+  .num{
+    flex:0 0 auto;width:2.25rem;height:2.25rem;border-radius:8px;
+    background:var(--brand);color:var(--brand-ink);
+    display:grid;place-items:center;font-weight:800;font-size:1rem;
+  }
+  .bloque__head h2{margin:0;font-size:1.3rem;line-height:1.3;flex:1 1 240px;letter-spacing:-.01em;}
+  .tag{
+    font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--brand-dark);background:rgba(66,184,131,.12);
+    border:1px solid rgba(66,184,131,.3);
+    padding:.25rem .6rem;border-radius:999px;white-space:nowrap;
+  }
+
+  h3{margin:1.75rem 0 .5rem;font-size:1rem;color:var(--accent);letter-spacing:.01em;}
+  h3:first-of-type{margin-top:0;}
+
+  p{margin:0 0 1rem;}
+  ul,ol{margin:0 0 1rem;padding-left:1.4rem;}
+  li{margin-bottom:.55rem;}
+  li::marker{color:var(--brand-dark);}
+
+  code{
+    background:var(--surface-2);padding:.12rem .4rem;border-radius:5px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.86em;border:1px solid var(--line);
+  }
+
+  /* ---------- CALLOUTS ---------- */
+  .callout{border-left:4px solid var(--brand);background:rgba(66,184,131,.07);padding:1rem 1.25rem;border-radius:0 10px 10px 0;margin:1.25rem 0;}
+  .callout--ojo{border-left-color:var(--warn);background:var(--warn-bg);}
+  .callout--stop{border-left-color:var(--danger);background:rgba(192,57,43,.07);}
+  .callout p:last-child{margin-bottom:0;}
+  .callout strong:first-child{display:inline-block;margin-bottom:.25rem;}
+
+  /* ---------- PISTAS ---------- */
+  details.pista{
+    border:1px dashed var(--line);border-radius:10px;
+    padding:.85rem 1.1rem;margin:1rem 0 0;background:var(--surface-2);
+  }
+  details.pista[open]{border-style:solid;border-color:var(--brand);}
+  details.pista summary{cursor:pointer;font-weight:700;font-size:.9rem;color:var(--brand-dark);list-style:none;user-select:none;}
+  details.pista summary::-webkit-details-marker{display:none;}
+  details.pista summary::before{content:"💡 ";}
+  details.pista summary:hover{text-decoration:underline;}
+  details.pista > *:not(summary){margin-top:.85rem;font-size:.92rem;color:var(--ink-soft);}
+  details.pista ul{margin-bottom:0;}
+
+  /* ---------- TABLA ---------- */
+  .tabla-scroll{overflow-x:auto;margin:1rem 0;-webkit-overflow-scrolling:touch;}
+  table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:520px;}
+  th,td{text-align:left;padding:.7rem .85rem;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:var(--surface-2);font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* ---------- NAV ---------- */
+  nav.indice{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:1.5rem;margin-bottom:2.5rem;box-shadow:var(--shadow);
+  }
+  nav.indice h2{margin:0 0 1rem;font-size:.82rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);}
+  nav.indice ol{margin:0;padding-left:1.3rem;columns:2;column-gap:2rem;}
+  nav.indice li{margin-bottom:.45rem;break-inside:avoid;}
+  nav.indice a{color:var(--accent);text-decoration:none;font-weight:600;font-size:.93rem;}
+  nav.indice a:hover{color:var(--brand-dark);text-decoration:underline;}
+  @media (max-width:600px){nav.indice ol{columns:1;}}
+
+  footer{border-top:1px solid var(--line);padding:2rem 0;text-align:center;color:var(--ink-soft);font-size:.85rem;}
+
+  a{color:var(--brand-dark);}
+  :focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:4px;}
+
+  @media (max-width:640px){
+    section.bloque{padding:1.5rem 1.15rem;}
+    .wrap{padding:0 1rem;}
+    header.hero{padding:2.5rem 0 2rem;}
+  }
+
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker">Módulo 7 · Lección 2 · Actividad práctica</span>
+    <h1>La carta del food truck</h1>
+    <p class="lead">
+      Construye un panel Vue 3 conectado a Cloud Firestore para administrar el menú de un food truck:
+      mostrar la carta en vivo, agregar platos, editarlos, marcar agotados y eliminarlos.
+      Un CRUD completo, sin backend propio.
+    </p>
+
+    <div class="hero-facts">
+      <div class="fact"><strong>5 bloques</strong>en orden, a tu ritmo</div>
+      <div class="fact"><strong>Vue 3 + Firestore</strong>Composition API</div>
+      <div class="fact"><strong>Individual</strong>o en parejas</div>
+      <div class="fact"><strong>Sin backend</strong>tu BD es la nube</div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <div class="callout">
+    <strong>Cinco operaciones. Ninguna a medias.</strong>
+    <p>
+      Esta actividad cubre el CRUD completo más una operación que no viste en clase. No se trata de
+      apilar funcionalidades, sino de que estas cinco queden <strong>sólidas y entendidas</strong>.
+      Si te sobra tiempo, al final hay material opcional — pero primero termina el núcleo.
+    </p>
+  </div>
+
+  <nav class="indice">
+    <h2>Ruta de trabajo</h2>
+    <ol>
+      <li><a href="#contexto">El encargo</a></li>
+      <li><a href="#datos">Tu base de datos</a></li>
+      <li><a href="#b1">Mostrar la carta</a></li>
+      <li><a href="#b2">Agregar un plato</a></li>
+      <li><a href="#b3">Editar un plato</a></li>
+      <li><a href="#b4">Eliminar un plato</a></li>
+      <li><a href="#b5">El contador de pedidos</a></li>
+      <li><a href="#extra">Si terminas antes</a></li>
+    </ol>
+  </nav>
+
+<!-- ============ CONTEXTO ============ -->
+<section class="bloque" id="contexto">
+  <div class="bloque__head">
+    <span class="num">🌮</span>
+    <h2>El encargo</h2>
+    <span class="tag">Contexto</span>
+  </div>
+
+  <p>
+    Un food truck que se mueve por distintas ferias lleva su carta en una pizarra y el control de lo
+    que se vende en una libreta. Cuando se acaba un producto, alguien lo tacha con plumón. Cuando
+    cambian los precios, se borra media pizarra y se reescribe.
+  </p>
+
+  <p>
+    El problema no es la pizarra: es que <strong>solo existe una y está arriba del camión</strong>.
+    La dueña no puede actualizar precios desde su casa, y la persona que atiende en la ventanilla no
+    tiene cómo avisarle al resto que se acabaron las papas.
+  </p>
+
+  <p>Te contratan para construir el <strong>panel de administración de la carta</strong>:</p>
+
+  <ol>
+    <li>Ver la carta completa, actualizada en tiempo real</li>
+    <li>Agregar un plato nuevo</li>
+    <li>Editar un plato existente</li>
+    <li>Eliminar un plato</li>
+    <li>Registrar cada vez que se pide un plato</li>
+  </ol>
+
+  <div class="callout callout--stop">
+    <strong>Acá no hay servidor que levantar. Y eso cambia todo.</strong>
+    <p>
+      En la actividad anterior tenías un backend en <code>localhost:3001</code> que validaba,
+      autorizaba y protegía los datos. <strong>Hoy ese backend no existe.</strong> Tu aplicación Vue
+      le habla directamente a la base de datos de Google desde el navegador.
+    </p>
+    <p>
+      Piensa un segundo en lo que eso significa: no hay ninguna capa intermedia que revise lo que
+      envías. Toda la protección vive en las <strong>Security Rules</strong> de Firestore. Vas a
+      volver sobre esta idea varias veces en la actividad, porque es LA diferencia conceptual entre
+      esta lección y la anterior.
+    </p>
+  </div>
+
+  <div class="callout callout--ojo">
+    <strong>Cómo usar esta guía.</strong>
+    <p>
+      Son cinco bloques. Trabájalos <strong>en orden</strong> y no pases al siguiente hasta que el
+      anterior funcione. Aquí no hay código para copiar, y es a propósito. Cada bloque tiene una
+      <em>pista</em> plegada al final — ábrela solo cuando lleves un rato realmente atascado.
+    </p>
+  </div>
+
+  <div class="callout callout--stop">
+    <strong>Esto no es la app de notas de la clase con otro nombre.</strong>
+    <p>
+      Comparten el SDK, pero acá aparecen cosas que en clase no salieron: un campo
+      <strong>numérico</strong> con todo lo que eso arrastra, un filtro que va a exigirte crear un
+      <strong>índice</strong>, un borrado que no se puede deshacer y un contador que se rompe si lo
+      resuelves de la forma obvia. Copiar el código de clase tal cual no te va a alcanzar.
+    </p>
+  </div>
+</section>
+
+<!-- ============ DATOS ============ -->
+<section class="bloque" id="datos">
+  <div class="bloque__head">
+    <span class="num">🔥</span>
+    <h2>Tu base de datos</h2>
+    <span class="tag">Infraestructura</span>
+  </div>
+
+  <p>
+    Cada quien trabaja con <strong>su propio proyecto de Firebase</strong>. Si todavía no lo tienes
+    creado, sigue la guía de configuración de la lección: crear el proyecto, activar Cloud Firestore
+    y registrar una app web para obtener las credenciales.
+  </p>
+
+  <h3>Antes de escribir una línea de Vue</h3>
+  <ol>
+    <li>Proyecto de Firebase creado, con Cloud Firestore activo.</li>
+    <li>App <strong>web</strong> registrada y configuración copiada.</li>
+    <li>SDK instalado en tu proyecto Vue.</li>
+    <li>Credenciales en variables de entorno, y ese archivo fuera del control de versiones.</li>
+    <li>Un único módulo que inicializa Firebase y exporta la instancia de la base de datos.</li>
+  </ol>
+
+  <h3>La colección con la que trabajas</h3>
+  <p>
+    Se llama <code>platos</code>. <strong>No la crees a mano en la consola.</strong> En Firestore las
+    colecciones nacen solas cuando insertas el primer documento — vas a comprobarlo en el bloque 2.
+  </p>
+
+  <h3>Forma de un documento de <code>platos</code></h3>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td><code>nombre</code></td><td>Texto</td><td>Obligatorio, mínimo 3 caracteres</td></tr>
+      <tr><td><code>precio</code></td><td><strong>Número</strong></td><td>Obligatorio, mayor que 0. Lee el aviso de más abajo</td></tr>
+      <tr><td><code>categoria</code></td><td>Texto</td><td>Solo acepta: <code>sandwich</code>, <code>acompanamiento</code>, <code>bebida</code> o <code>postre</code></td></tr>
+      <tr><td><code>disponible</code></td><td>Booleano</td><td>Un plato agotado no se borra, se marca</td></tr>
+      <tr><td><code>vecesPedido</code></td><td>Número</td><td>Empieza en 0. Nunca se escribe a mano después</td></tr>
+      <tr><td><code>creadoEn</code></td><td>Marca de tiempo</td><td>La pone el servidor, no tu computador</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout callout--ojo">
+    <strong>El campo <code>precio</code> es donde se cae la mitad del curso.</strong>
+    <p>
+      Todo lo que escribes en un campo de formulario HTML es <strong>texto</strong>. Siempre. Aunque
+      el input diga <code>type="number"</code>. Si guardas ese valor tal cual, en tu base de datos
+      queda <code>"3500"</code> — un string — y Firestore lo acepta feliz, porque no tiene esquema
+      que lo impida.
+    </p>
+    <p>
+      ¿Y qué se rompe? Ordenar de menor a mayor te va a devolver <code>"1200"</code>,
+      <code>"3500"</code>, <code>"900"</code> en ese orden, porque comparó letra por letra.
+      Filtrar por <code>precio &lt; 5000</code> no encuentra nada. Y sumar dos precios te va a dar
+      <code>"35004200"</code>. <strong>Convierte a número antes de guardar</strong>, y aprende a
+      reconocer estos síntomas: los vas a ver toda tu carrera.
+    </p>
+  </div>
+
+  <h3>Reglas de seguridad para hoy</h3>
+  <p>
+    Si creaste la base en <strong>modo de prueba</strong>, tienes acceso libre por 30 días y puedes
+    avanzar. Anótalo igual: el día 31 tu app deja de funcionar de golpe y el error no va a decir
+    "se te vencieron las reglas". En el material opcional vas a escribir reglas de verdad.
+  </p>
+
+  <div class="callout callout--stop">
+    <strong>Una consola, dos pestañas.</strong>
+    <p>
+      Ten siempre abiertas <strong>tu app</strong> y <strong>la consola de Firestore</strong> lado a
+      lado. Cuando escribas un documento desde Vue, quiero que lo veas aparecer en la consola sin
+      recargar nada. Esa retroalimentación inmediata es la mitad del aprendizaje de esta actividad:
+      deja de ser "código que ojalá funcione" y pasa a ser un dato que ves moverse.
+    </p>
+  </div>
+</section>
+
+<!-- ============ BLOQUE 1 ============ -->
+<section class="bloque" id="b1">
+  <div class="bloque__head">
+    <span class="num">1</span>
+    <h2>Mostrar la carta</h2>
+    <span class="tag">Read</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Mostrar todos los platos de la colección al cargar la página, ordenados por categoría y luego por precio.</li>
+    <li>Cada plato se ve como una tarjeta con nombre, precio formateado como moneda, categoría y su estado de disponibilidad.</li>
+    <li>Un plato marcado como no disponible debe distinguirse claramente del resto.</li>
+    <li>Mostrar el total de platos y cuántos están disponibles.</li>
+    <li>Un selector para filtrar por categoría, con una opción para ver todos.</li>
+    <li>La lista se actualiza <strong>sola</strong>: si alguien cambia un dato desde la consola de Firebase, tu pantalla lo refleja sin que nadie recargue.</li>
+    <li>Toda la conversación con Firestore vive en una <strong>capa de servicios</strong> aparte. Ningún componente importa el SDK directamente.</li>
+  </ul>
+
+  <h3>Los cuatro estados obligatorios</h3>
+  <ol>
+    <li><strong>Cargando</strong> — mientras llega la primera respuesta.</li>
+    <li><strong>Error</strong> — si la conexión falla, con un mensaje en lenguaje humano.</li>
+    <li><strong>Vacío</strong> — la colección existe pero no hay platos, o el filtro no encontró ninguno. <em>No son el mismo mensaje.</em></li>
+    <li><strong>Con datos</strong> — la carta renderizada.</li>
+  </ol>
+
+  <div class="callout callout--ojo">
+    <strong>Dos formas de leer, y la diferencia no es de estilo.</strong>
+    <p>
+      El SDK ofrece una lectura <strong>puntual</strong> — pides los datos, llegan, se acabó — y una
+      <strong>suscripción</strong> que deja un canal abierto y te avisa de cada cambio. Averigua cómo
+      se llama cada una, cuál necesitas para cumplir el requisito de "se actualiza sola", y qué costo
+      tiene esa comodidad en lecturas de tu cuota.
+    </p>
+    <p>
+      Y lo más importante: una suscripción <strong>hay que cerrarla</strong>. Si el componente se
+      destruye y el canal sigue abierto, acabas de crear una fuga de memoria que además te sigue
+      consumiendo cuota. Investiga qué te devuelve la función al suscribirte y en qué gancho del
+      ciclo de vida de Vue debes usarlo.
+    </p>
+  </div>
+
+  <div class="callout callout--stop">
+    <strong>El filtro te va a tirar un error. Ese error es el ejercicio.</strong>
+    <p>
+      Cuando filtres por una categoría <em>y además</em> ordenes por otro campo, Firestore va a
+      rechazar la consulta con un mensaje en la consola del navegador que incluye
+      <strong>una URL larga</strong>. No es un bug tuyo.
+    </p>
+    <p>
+      Firestore necesita un <strong>índice compuesto</strong> para resolver esa combinación, y ese
+      enlace lo crea con un clic. Antes de hacer clic, léelo: averigua qué es un índice compuesto,
+      por qué esta base de datos los exige por adelantado en vez de resolverlo sobre la marcha, y
+      qué relación tiene eso con que Firestore prometa la misma velocidad con 100 o con 100.000
+      documentos. Prepárate para explicarlo.
+    </p>
+  </div>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que la lista se actualice sola y puedas demostrarlo editando un dato desde la consola de Firebase.</li>
+    <li>Que la suscripción se cierre al destruir el componente, y sepas mostrar dónde lo haces.</li>
+    <li>Que "sin platos" y "el filtro no encontró nada" muestren mensajes distintos.</li>
+    <li>Que expliques qué es el índice que creaste y por qué hizo falta.</li>
+    <li>Que la consola del navegador esté limpia.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — lectura en vivo y consultas</summary>
+    <ul>
+      <li>Para apuntar a una colección necesitas la instancia de la base de datos y el nombre de la colección. Eso te da una referencia, todavía no los datos.</li>
+      <li>Sobre esa referencia se construye una <em>consulta</em> encadenando restricciones: una para filtrar por igualdad y otra para ordenar. El orden en que las declaras importa para el índice que Firestore te va a pedir.</li>
+      <li>La suscripción recibe una función que se ejecuta con cada cambio. Dentro llega una instantánea de la colección: recórrela y arma tu arreglo. <strong>El identificador del documento no está dentro de sus datos</strong> — viene aparte, y lo vas a necesitar sí o sí en los bloques 3, 4 y 5. Guárdalo junto al resto.</li>
+      <li>La suscripción <em>devuelve</em> algo. Ese algo es la función que la cancela. Guárdala en una variable del componente y llámala en el gancho que se dispara cuando el componente se desmonta.</li>
+      <li>Si al cambiar el filtro quieres una consulta nueva, tienes que cancelar la anterior antes de abrir la siguiente. Si no, terminas con varias suscripciones vivas pisándose entre ellas — y ese bug es difícil de ver porque "funciona", solo que raro.</li>
+      <li>Para formatear el precio como moneda chilena, el navegador ya trae una API de internacionalización. No armes el formato con concatenación de strings.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 2 ============ -->
+<section class="bloque" id="b2">
+  <div class="bloque__head">
+    <span class="num">2</span>
+    <h2>Agregar un plato</h2>
+    <span class="tag">Create</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un formulario con nombre, precio y categoría.</li>
+    <li>La categoría se elige de una lista con los cuatro valores permitidos, no se escribe libremente.</li>
+    <li>Validación antes de enviar: nombre con mínimo 3 caracteres, precio numérico mayor que 0, categoría seleccionada. Cada error se muestra <strong>debajo de su campo</strong>.</li>
+    <li>Al guardar, el plato nace con <code>disponible</code> en verdadero, <code>vecesPedido</code> en 0 y la fecha puesta por el servidor.</li>
+    <li>El botón se deshabilita mientras la escritura está en curso.</li>
+    <li>Si sale bien: mensaje de confirmación y formulario limpio.</li>
+    <li>El plato nuevo aparece en la lista <strong>sin que escribas una línea para agregarlo ahí</strong>.</li>
+  </ul>
+
+  <div class="callout callout--ojo">
+    <strong>Ese último requisito no es un descuido. Compruébalo.</strong>
+    <p>
+      Si el bloque 1 lo resolviste con una suscripción, la lista se entera sola de la escritura. No
+      tienes que agregar el plato al arreglo a mano ni volver a pedir la colección. <strong>Esa es
+      exactamente la diferencia</strong> con la actividad anterior, donde sí tenías que insertar la
+      respuesta del servidor en tu lista local.
+    </p>
+    <p>
+      Si te dan ganas de agregarlo manualmente "por si acaso", detente: vas a terminar con el plato
+      duplicado en pantalla. Que ese impulso te dé, y que entiendas por qué está de más, es parte de
+      lo que se está evaluando.
+    </p>
+  </div>
+
+  <h3>La prueba de este bloque</h3>
+  <ol>
+    <li>Con la colección vacía, agrega tu primer plato y mira la consola de Firebase: la colección <code>platos</code> apareció sola.</li>
+    <li>Abre el documento recién creado y revisa el tipo del campo <code>precio</code>. Firestore te dice el tipo de cada campo. <strong>Tiene que decir número.</strong> Si dice cadena, vuelve al aviso del principio.</li>
+    <li>Revisa <code>creadoEn</code>. Justo después de crear, ese campo llega vacío por unos milisegundos antes de que el servidor lo complete. Averigua por qué pasa y asegúrate de que tu interfaz no explote en ese instante.</li>
+  </ol>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que <code>precio</code> quede guardado como número y lo demuestres en la consola de Firebase.</li>
+    <li>Que la fecha la ponga el servidor y sepas explicar por qué no se usa la hora del computador del cliente.</li>
+    <li>Que no se pueda enviar el formulario dos veces por hacer doble clic.</li>
+    <li>Que la validación esté antes del envío y no dependa solo del navegador.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — escribir el primer documento</summary>
+    <ul>
+      <li>Hay dos formas de crear un documento: una en que Firestore genera el identificador por ti, y otra en que tú lo eliges. Para este caso queremos la primera. Averigua cómo se llama cada una.</li>
+      <li>Le pasas la referencia a la colección y un objeto plano de JavaScript. Ese objeto es el documento. No hay esquema que validar ni migración que correr.</li>
+      <li>Para convertir el texto del formulario a número tienes varias funciones disponibles. Investiga cuál se comporta mejor con entradas basura y decide si la conversión va antes o después de tu validación.</li>
+      <li>La marca de tiempo del servidor no es un valor que calcules: es una <em>instrucción</em> que le mandas a Firestore para que él ponga su propia hora al momento de escribir. Por eso llega vacía por un instante — el valor todavía no existe cuando tu suscripción ya te avisó del cambio.</li>
+      <li>¿Por qué la hora del servidor y no <code>new Date()</code>? Porque el reloj del computador de cada usuario puede estar mal, en otra zona horaria, o directamente adulterado. Con dos usuarios en distintas ciudades, ordenar por fecha se vuelve mentira.</li>
+      <li>Encierra la escritura en un bloque de intento y captura, y apaga el indicador de carga en la cláusula que corre siempre.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 3 ============ -->
+<section class="bloque" id="b3">
+  <div class="bloque__head">
+    <span class="num">3</span>
+    <h2>Editar un plato</h2>
+    <span class="tag">Update</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un botón en cada tarjeta que abra el plato en modo edición con sus valores actuales ya cargados.</li>
+    <li>Se pueden modificar nombre, precio y categoría. Se guarda o se cancela.</li>
+    <li>Cancelar deja el plato <strong>exactamente</strong> como estaba, aunque hayas escrito cosas en el formulario.</li>
+    <li>Un botón aparte para alternar entre disponible y agotado, con un solo clic. Eso no requiere abrir el formulario completo.</li>
+    <li>El cambio se refleja en la lista sin recargar.</li>
+    <li>La actualización debe modificar <strong>únicamente los campos editados</strong>. Los demás no se tocan.</li>
+  </ul>
+
+  <div class="callout callout--stop">
+    <strong>Hay dos formas de escribir sobre un documento existente, y una te borra datos.</strong>
+    <p>
+      Una de ellas <strong>reemplaza el documento completo</strong> por el objeto que le pasas: todo
+      campo que no venga en ese objeto <em>desaparece</em>. La otra hace una fusión y solo toca las
+      claves que enviaste.
+    </p>
+    <p>
+      Si eliges la equivocada y mandas solo nombre, precio y categoría, acabas de borrar
+      <code>vecesPedido</code>, <code>disponible</code> y <code>creadoEn</code> de ese plato. Sin
+      advertencia, sin error, sin vuelta atrás. Averigua cuál es cuál <strong>antes</strong> de
+      escribir la función, y pruébalo mirando el documento en la consola de Firebase.
+    </p>
+  </div>
+
+  <div class="callout callout--ojo">
+    <strong>Cuidado con la copia por referencia.</strong>
+    <p>
+      Si al abrir el modo edición asignas el objeto del plato directamente a tu formulario reactivo,
+      los dos nombres apuntan al <strong>mismo objeto en memoria</strong>. Resultado: mientras
+      escribes en el input, la tarjeta de la lista va cambiando sola detrás — y si cancelas, el
+      cambio ya se quedó pegado en pantalla.
+    </p>
+    <p>
+      Esto no es un problema de Firestore ni de Vue: es cómo funcionan los objetos en JavaScript.
+      Investiga cómo hacer una copia real y por qué asignar no basta. Es de los bugs más comunes en
+      formularios de edición.
+    </p>
+  </div>
+
+  <h3>La prueba de este bloque</h3>
+  <ol>
+    <li>Edita un plato y luego mira su documento en la consola: <code>vecesPedido</code> y <code>creadoEn</code> deben seguir ahí, intactos.</li>
+    <li>Abre el modo edición, cambia el nombre, cancela. La tarjeta debe mostrar el nombre original.</li>
+    <li>Marca un plato como agotado y comprueba que se distingue visualmente en la lista.</li>
+  </ol>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que uses la operación que fusiona y expliques la diferencia con la que reemplaza.</li>
+    <li>Que cancelar no deje residuos en la interfaz.</li>
+    <li>Que el estado agotado se comunique <strong>sin depender solo del color</strong>, para quien no distingue colores.</li>
+    <li>Que la misma validación del bloque 2 aplique acá. Un plato editado no puede quedar con precio negativo.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — actualizar sin destruir</summary>
+    <ul>
+      <li>Para apuntar a <em>un</em> documento necesitas tres cosas: la base de datos, el nombre de la colección y el identificador. Ese identificador es el que guardaste en el bloque 1 — si no lo guardaste, vuelve allá, porque sin él no puedes tocar nada.</li>
+      <li>La operación que fusiona recibe la referencia al documento y un objeto con <strong>solo</strong> los campos a cambiar.</li>
+      <li>Alternar un booleano no necesita formulario: lees el valor actual desde la tarjeta y escribes su opuesto. Una línea.</li>
+      <li>Para copiar un objeto plano sin arrastrar la referencia, el operador de propagación te sirve. Ojo: eso copia un solo nivel de profundidad. Para este ejercicio alcanza, pero averigua qué pasa con objetos anidados.</li>
+      <li>La validación del bloque 2 no debería estar escrita dos veces. Si la extraes a una función aparte, ambos formularios la comparten. Si te da flojera hacerlo, pregúntate qué pasa cuando cambie la regla de negocio.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 4 ============ -->
+<section class="bloque" id="b4">
+  <div class="bloque__head">
+    <span class="num">4</span>
+    <h2>Eliminar un plato</h2>
+    <span class="tag">Delete</span>
+  </div>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un botón de eliminar en cada tarjeta.</li>
+    <li>Una confirmación explícita antes de borrar, que muestre <strong>el nombre del plato</strong> que se va a eliminar.</li>
+    <li>Si se confirma, el plato desaparece de la lista sin recargar.</li>
+    <li>Si se cancela, no pasa absolutamente nada.</li>
+    <li>Mientras el borrado está en curso, esa tarjeta muestra que algo está pasando.</li>
+  </ul>
+
+  <div class="callout callout--stop">
+    <strong>En Firestore no hay papelera de reciclaje.</strong>
+    <p>
+      Un documento eliminado <strong>no se puede recuperar</strong>. No hay deshacer, no hay respaldo
+      automático en el plan gratuito, no hay a quién reclamarle. Se fue.
+    </p>
+    <p>
+      Por eso la confirmación no es un adorno de interfaz: es la última línea de defensa entre un
+      clic accidental y la pérdida de datos. Y por eso también existe el concepto de
+      <strong>borrado lógico</strong> — marcar un registro como eliminado en vez de destruirlo.
+      Averigua cuándo se usa cada uno y ten lista tu opinión: te la voy a preguntar.
+    </p>
+  </div>
+
+  <h3>La prueba de este bloque</h3>
+  <ol>
+    <li>Elimina un plato con la consola de Firebase abierta al lado y mira cómo desaparece de los dos lados a la vez.</li>
+    <li>Abre tu app en <strong>dos pestañas</strong>. Borra en una. La otra tiene que enterarse sola.</li>
+    <li>Cancela una confirmación y verifica que el plato sigue completo, con todos sus campos.</li>
+  </ol>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que la confirmación identifique el plato concreto y no sea un "¿estás seguro?" genérico.</li>
+    <li>Que puedas explicar la diferencia entre borrado físico y borrado lógico, y justificar cuál corresponde acá.</li>
+    <li>Que la prueba de las dos pestañas funcione y entiendas por qué funciona.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — borrar con red de seguridad</summary>
+    <ul>
+      <li>La operación de borrado recibe la referencia al documento — la misma que construiste en el bloque 3 — y nada más.</li>
+      <li>Para la confirmación puedes usar el diálogo nativo del navegador y cumples el requisito. Pero mira cómo se ve, y pregúntate si eso es aceptable en un producto real. Un diálogo propio en el componente no es mucho más trabajo.</li>
+      <li>Para el indicador de carga por tarjeta no te sirve una sola variable booleana compartida: se te encienden todas las tarjetas a la vez. Necesitas saber <em>cuál</em> identificador está en proceso.</li>
+      <li>La prueba de las dos pestañas funciona por la misma razón que el bloque 2 no necesitaba agregar el plato a mano. Si no ves la conexión entre ambas cosas, ese es el concepto que te falta cerrar de toda la actividad.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BLOQUE 5 ============ -->
+<section class="bloque" id="b5">
+  <div class="bloque__head">
+    <span class="num">5</span>
+    <h2>El contador de pedidos</h2>
+    <span class="tag">Concurrencia</span>
+  </div>
+
+  <p>
+    Este bloque es corto de escribir y es el más importante de la actividad. Léelo completo antes de
+    tocar el teclado.
+  </p>
+
+  <h3>Lo que debe hacer tu aplicación</h3>
+  <ul>
+    <li>Un botón <strong>"+1 pedido"</strong> en cada tarjeta que incremente <code>vecesPedido</code> en uno.</li>
+    <li>El número actualizado se ve en la tarjeta.</li>
+    <li>Los platos agotados no se pueden pedir.</li>
+    <li>El botón debe aguantar clics rápidos y repetidos sin perder ni una cuenta.</li>
+  </ul>
+
+  <div class="callout callout--stop">
+    <strong>La solución obvia está mal. Y quiero que la escribas igual.</strong>
+    <p>
+      Lo primero que se te va a ocurrir es: leo el valor actual, le sumo uno, lo guardo. Tres pasos
+      lógicos, imposible que falle. <strong>Hazlo así primero.</strong> Necesitas verlo romperse con
+      tus propios ojos.
+    </p>
+  </div>
+
+  <h3>Rómpelo a propósito</h3>
+  <ol>
+    <li>Implementa el contador con la fórmula de leer, sumar y guardar.</li>
+    <li>Abre tu aplicación en <strong>dos pestañas</strong>, lado a lado, mirando el mismo plato.</li>
+    <li>Haz clic en "+1 pedido" en las dos pestañas <strong>lo más rápido que puedas</strong>, alternando. Unos veinte clics en total.</li>
+    <li>Cuenta cuántos clics diste. Ahora mira el número guardado.</li>
+  </ol>
+
+  <p>
+    <strong>No cuadra.</strong> Faltan pedidos. Y no perdiste ninguna petición: todas llegaron a
+    Firestore y todas se ejecutaron.
+  </p>
+
+  <div class="callout callout--ojo">
+    <strong>Lo que acabas de provocar tiene nombre: condición de carrera.</strong>
+    <p>
+      Entre que tu código <em>lee</em> el valor y lo <em>escribe</em>, pasa tiempo — poco, pero
+      existe. Si en esa ventana alguien más escribió, tú estás calculando sobre un dato viejo y tu
+      escritura pisa la del otro. Las dos operaciones "funcionaron" y aun así se perdió una.
+    </p>
+    <p>
+      Esto no es un defecto de Firestore. Le pasa a cualquier base de datos del mundo, y es la razón
+      por la que existen las transacciones y las operaciones atómicas. Con dos pestañas se te pierden
+      tres pedidos; con doscientos usuarios reales, se te pierde la contabilidad del negocio.
+    </p>
+  </div>
+
+  <h3>Ahora arréglalo</h3>
+  <p>
+    Firestore tiene una forma de decir <em>"súmale uno a lo que sea que haya"</em> sin leerlo
+    primero. La operación se resuelve entera del lado del servidor, y por eso nadie puede colarse en
+    la mitad. Busca en la documentación las operaciones atómicas de campo — hay una específica para
+    incrementar valores numéricos.
+  </p>
+
+  <p>
+    Cámbiala, repite la prueba de las dos pestañas, y vuelve a contar. Ahora tiene que cuadrar
+    exacto.
+  </p>
+
+  <h3>Lo que se te va a evaluar</h3>
+  <ul>
+    <li>Que hayas <strong>reproducido el error</strong> a propósito y puedas describir qué viste.</li>
+    <li>Que expliques con tus palabras qué es una condición de carrera, sin leer la definición.</li>
+    <li>Que la versión final use la operación atómica y la prueba de las dos pestañas cuadre.</li>
+    <li>Que sepas nombrar otro escenario, fuera de esta actividad, donde pasaría lo mismo. Piensa en stock, en asientos de un avión, en saldos.</li>
+  </ul>
+
+  <details class="pista">
+    <summary>Pista — sumar sin leer</summary>
+    <ul>
+      <li>La operación atómica no es un número: es un <em>objeto especial</em> que le pasas como valor a la actualización. Firestore lo reconoce y lo interpreta como una instrucción, no como un dato.</li>
+      <li>Se usa dentro de la misma operación de actualización que ya conoces del bloque 3. Cambia el valor, no la función.</li>
+      <li>Sirve también con números negativos. Piensa cómo lo usarías para descontar stock.</li>
+      <li>Firestore tiene además un mecanismo más general para casos donde sí necesitas leer antes de escribir — por ejemplo, "descuenta uno solo si queda stock". Búscalo, entiende en qué se diferencia del incremento atómico, y guárdalo para el material opcional.</li>
+      <li>El límite es un aproximado de una escritura por segundo <em>sobre el mismo documento</em>. Si tu contador fuera a recibir miles de clics por segundo, la solución sería otra. Averigua qué es un contador distribuido — no lo implementes, solo entiende qué problema resuelve.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ EXTRA ============ -->
+<section class="bloque" id="extra">
+  <div class="bloque__head">
+    <span class="num">🚀</span>
+    <h2>Si terminas antes</h2>
+    <span class="tag">Opcional</span>
+  </div>
+
+  <p>
+    Solo si los cinco bloques están terminados y funcionando. No empieces por acá:
+    entregar cinco cosas sólidas vale más que diez a medias.
+  </p>
+
+  <h3>Nivel 1 — pulir lo que ya tienes</h3>
+  <ol>
+    <li><strong>Buscador</strong> por nombre sobre la carta. Decide si filtras en el navegador o en la consulta a Firestore, y ten lista la justificación — porque hay un costo en cuota detrás de esa decisión.</li>
+    <li><strong>Estadísticas de la carta:</strong> precio promedio, plato más pedido, total de platos agotados.</li>
+    <li><strong>Notificación temporal</strong> que confirme cada operación y desaparezca sola.</li>
+    <li><strong>Deshacer el borrado:</strong> guarda el plato eliminado en memoria unos segundos y ofrece recuperarlo. Piensa bien qué estás haciendo realmente cuando lo "recuperas", porque el documento original ya no existe.</li>
+    <li><strong>Orden configurable:</strong> que se pueda ordenar por precio, por nombre o por veces pedido. Prepárate: cada combinación nueva puede pedirte otro índice.</li>
+  </ol>
+
+  <h3>Nivel 2 — conceptos nuevos</h3>
+  <ol>
+    <li>
+      <strong>Reglas de seguridad de verdad.</strong> Reemplaza las de modo de prueba por reglas que
+      exijan que <code>nombre</code> sea texto no vacío, que <code>precio</code> sea número mayor que
+      cero, y que <code>categoria</code> esté dentro de los cuatro valores permitidos. Después intenta
+      escribir un precio negativo desde la consola del navegador y comprueba que la base te rechaza.
+      <strong>Esa es la validación que importa</strong>, porque es la única que el usuario no puede
+      saltarse.
+    </li>
+    <li>
+      <strong>Composable propio:</strong> extrae toda la lógica de la colección a una función
+      reutilizable que exponga los platos y las operaciones. El componente debería quedar casi sin
+      lógica.
+    </li>
+    <li>
+      <strong>Transacción:</strong> implementa "vender una unidad" que descuente stock solo si queda
+      disponible, y marque el plato como agotado cuando llegue a cero. Ahí sí necesitas leer antes de
+      escribir, y ahí sí necesitas una transacción.
+    </li>
+    <li>
+      <strong>Subcolección de pedidos:</strong> en vez de un contador, guarda cada pedido como un
+      documento dentro del plato. Averigua qué ganas y qué pierdes con ese cambio de modelado, y
+      cuántas lecturas te cuesta ahora mostrar el total.
+    </li>
+    <li>
+      <strong>Paginación real:</strong> carga los platos de a diez con un botón de "ver más".
+      Investiga cómo se le dice a Firestore "continúa después de este documento".
+    </li>
+  </ol>
+
+  <div class="callout">
+    <strong>Y el cierre, que no es sobre código.</strong>
+    <p>
+      El CRUD lo vas a escribir mil veces en tu carrera y se te va a volver mecánico. Lo que no es
+      mecánico es lo otro: entender que un dato guardado con el tipo equivocado te rompe consultas
+      meses después, que una suscripción sin cerrar es una fuga que nadie ve, que sin backend la
+      seguridad se mudó completa a las reglas, y que dos usuarios simultáneos pueden hacer fallar
+      código que en tu computador funcionaba perfecto.
+    </p>
+    <p>
+      Si terminas esta actividad sabiendo <em>por qué</em> el contador ingenuo pierde pedidos, ya
+      cumpliste el objetivo de la clase. Todo lo demás es sintaxis.
+    </p>
+    <p>
+      Los conceptos primero. El código después.
+    </p>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Módulo 7 · Lección 2 — Consumo de datos desde una API · Actividad práctica con Firestore
+  </div>
+</footer>
+
+</body>
+</html>
